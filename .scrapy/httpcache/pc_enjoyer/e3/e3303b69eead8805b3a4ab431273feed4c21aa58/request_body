@@ -1,0 +1,12 @@
+{
+    "cookies": [],
+    "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en",
+        "User-Agent": "Scrapy/2.11.2 (+https://scrapy.org)"
+    },
+    "https://www.skysports.com/football": "https://www.skysports.com/football",
+    "lua_source": "\n        function main(splash, args)\n          assert(splash:go(args.url))\n          assert(splash:wait(0.5))\n          return {\n            html = splash:html()\n          }\n        end",
+    "url": "https://www.skysports.com/football",
+    "wait": 1
+}

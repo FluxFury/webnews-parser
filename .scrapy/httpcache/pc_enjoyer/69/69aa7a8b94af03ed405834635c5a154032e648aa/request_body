@@ -1,0 +1,14 @@
+{
+    "cookies": [],
+    "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en",
+        "User-Agent": "Scrapy/2.11.2 (+https://scrapy.org)"
+    },
+    "html": 1,
+    "https://turbopypip.github.io/pc-enjoyer2.0/": "https://turbopypip.github.io/pc-enjoyer2.0/",
+    "png": 1,
+    "url": "https://turbopypip.github.io/pc-enjoyer2.0/",
+    "wait": 0.5,
+    "width": 1000
+}
