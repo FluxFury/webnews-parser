@@ -20,8 +20,9 @@ class NewsSpider(Spider):
 
     def start_requests(self):
 
-        url = "https://www.hltv.org/news/archive/2024/august"
-        yield SplashRequest(url=url, callback=self.parse, endpoint='execute',
+        url_array = ["https://www.hltv.org/news/archive/2024/august", "https://www.hltv.org/news/archive/2024/july"]
+        for url in url_array:
+            yield SplashRequest(url=url, callback=self.parse, endpoint='execute',
                             args={'wait': 1, 'lua_source': lua_script_start})
 
     def parse_news(self, response):
@@ -40,7 +41,6 @@ class NewsSpider(Spider):
             yield SplashRequest(url=response.urljoin(url=paragraph.css('a.newsline.article::attr(href)').get()),
                                 callback=self.parse_news,
                                 meta={'header': paragraph.css('div.newstext::text').get(),
-                                      'rel_url': response.urljoin(
-                                          url=paragraph.css('a.newsline.article::attr(href)').get())},
+                                'rel_url': response.urljoin(url=paragraph.css('a.newsline.article::attr(href)').get())},
                                 endpoint='execute',
                                 args={'wait': 2, 'lua_source': lua_script_start})
