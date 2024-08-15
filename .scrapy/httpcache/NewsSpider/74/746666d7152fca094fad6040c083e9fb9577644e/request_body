@@ -1,0 +1,12 @@
+{
+    "cookies": [],
+    "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en",
+        "Referer": "https://www.hltv.org/news/archive/2024/august",
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36"
+    },
+    "lua_source": "\nfunction main(splash, args)\n  assert(splash:go(args.url))\n  assert(splash:wait(1))\n  return {\n    html = splash:html()\n  }\nend",
+    "url": "https://www.hltv.org/news/39496/liquid-move-past-navi-at-blast-groups",
+    "wait": 2
+}

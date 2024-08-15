@@ -1,0 +1,12 @@
+{
+    "cookies": [],
+    "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en",
+        "Referer": "https://www.hltv.org/news/archive/2024/august",
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36"
+    },
+    "lua_source": "\nfunction main(splash, args)\n  assert(splash:go(args.url))\n  return {\n    html = splash:html()\n  }\nend",
+    "url": "https://www.hltv.org/news/39617/iem-cologne-2024-playoffs-set-with-saw-amongst-the-elite",
+    "wait": 3
+}
