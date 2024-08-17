@@ -3,7 +3,8 @@ BOT_NAME = "newsparser"
 
 SPIDER_MODULES = ["newsparser.spiders"]
 NEWSPIDER_MODULE = "newsparser.spiders"
-SPLASH_URL = 'http://localhost:8050'
+SPLASH_URL = 'http://192.168.59.103:8050'
+
 SPLASH_ARGS = {'images': 0}
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
