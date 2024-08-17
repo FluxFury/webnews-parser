@@ -12,14 +12,6 @@ getLogger('scrapy_user_agents.user_agent_picker').setLevel(ERROR)
 lua_script_start = """
 function main(splash, args)
   assert(splash:go(args.url))
-  local scroll = splash:jsfunc([[
-    function scrollWithDelay() {
-        for (let i = 0; i < 5; ++i) {
-            setTimeout(() => window.scrollTo(0, document.body.scrollHeight), i * 2000);
-        }
-    }
-  ]])
-  scroll()
   assert(splash:wait(1))
   return {
     html = splash:html()
@@ -27,8 +19,8 @@ function main(splash, args)
 end"""
 
 
-class NewsSpider(Spider):
-    name = "NewsSpider"
+class CSNewsSpider(Spider):
+    name = "CSNewsSpider"
 
     def start_requests(self):
 
@@ -64,3 +56,5 @@ class NewsSpider(Spider):
                                           url=paragraph.css('a.newsline.article::attr(href)').get())},
                                 endpoint='execute',
                                 args={'wait': 0.5, 'lua_source': lua_script_start})
+
+

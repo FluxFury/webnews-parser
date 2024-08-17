@@ -1,7 +1,7 @@
-BOT_NAME = "newsparser"
+BOT_NAME = "CSMatchesSpider"
 
-SPIDER_MODULES = ["newsparser.spiders"]
-NEWSPIDER_MODULE = "newsparser.spiders"
+SPIDER_MODULES = ["MainParserDirectory.spiders"]
+NEWSPIDER_MODULE = "MainParserDirectory.spiders"
 SPLASH_URL = 'http://localhost:8050'
 
 SPLASH_ARGS = {'images': 0}
