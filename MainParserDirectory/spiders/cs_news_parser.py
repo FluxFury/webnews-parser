@@ -28,13 +28,17 @@ class CSNewsSpider(Spider):
                      "https://www.hltv.org/news/archive/2024/july"]
         for url in url_array:
             yield SplashRequest(url=url, callback=self.parse, endpoint='execute',
-                                args={'wait': 0.5, 'lua_source': lua_script_start})
+                                args={'lua_source': lua_script_start, 'timeout': 60, 'wait': 2})
 
+    def clean_text(self, text: str) -> str:
+        return text.replace('\u2060', '').replace('\\','')\
+            .replace(']','').replace('[','').strip() # Удаление \u2060, \, [, ]
     def parse_news(self, response):
-        news_string = response.css('p.headertext::text').get().strip() + ' ' \
+        news_string = self.clean_text(response.css('p.headertext::text').get())\
             if response.css("p.headertext::text") else ""
-        for piece in response.css('p.news-block').xpath('string()').getall():
-            news_string += ' ' + piece.strip()
+        for piece in response.css('p.news-block'):
+            news_string += ' ' + self.clean_text(piece.xpath('string()').get()) \
+                if news_string else self.clean_text(piece.xpath('string()').get())
         yield {
             "header": response.meta.get('header'),
             "url": response.meta.get('rel_url'),
@@ -49,12 +53,10 @@ class CSNewsSpider(Spider):
 
     def parse(self, response: Response, **kwargs: Any) -> Any:
         for paragraph in response.css('a.newsline.article'):
-            yield SplashRequest(url=response.urljoin(url=paragraph.css('a.newsline.article::attr(href)').get()),
+            yield SplashRequest(url=response.urljoin(url=paragraph.css('::attr(href)').get()),
                                 callback=self.parse_news,
                                 meta={'header': paragraph.css('div.newstext::text').get(),
                                       'rel_url': response.urljoin(
-                                          url=paragraph.css('a.newsline.article::attr(href)').get())},
+                                          url=paragraph.css('::attr(href)').get())},
                                 endpoint='execute',
-                                args={'wait': 0.5, 'lua_source': lua_script_start})
-
-
+                                args={'wait': 2, 'lua_source': lua_script_start, 'timeout': 60})
