@@ -6,6 +6,7 @@
 
 # Default ignored files
 .gitignore
+/downloaded_files/
 /shelf/
 /workspace.xml
 /media/

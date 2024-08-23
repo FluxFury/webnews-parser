@@ -110,5 +110,9 @@ class SeleniumMiddleware:
 
     def process_request(self, request, spider):
         self.driver.get(request.url)
-        time.sleep(1)
+        time.sleep(0.5)
         return HtmlResponse(self.driver.current_url, body=self.driver.page_source, encoding='utf-8', request=request)
+
+    def spider_closed(self):
+        self.driver.close()
+        self.driver.quit()

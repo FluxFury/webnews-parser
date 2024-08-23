@@ -11,8 +11,9 @@ getLogger('scrapy_user_agents.user_agent_picker').setLevel(ERROR)
 
 lua_script_start = """
 function main(splash, args)
+  splash.images_enabled = false
   assert(splash:go(args.url))
-  assert(splash:wait(1))
+  assert(splash:wait(0.5))
   return {
     html = splash:html()
   }
@@ -33,6 +34,7 @@ class CSNewsSpider(Spider):
     def clean_text(self, text: str) -> str:
         return text.replace('\u2060', '').replace('\\','')\
             .replace(']','').replace('[','').strip() # Удаление \u2060, \, [, ]
+
     def parse_news(self, response):
         news_string = self.clean_text(response.css('p.headertext::text').get())\
             if response.css("p.headertext::text") else ""
@@ -50,13 +52,11 @@ class CSNewsSpider(Spider):
             if response.xpath('//div[@class="date"]/@data-unix').get()
             else response.xpath('//div[@class="news-with-frag-date"]/@data-unix').get(),
         }
-
     def parse(self, response: Response, **kwargs: Any) -> Any:
         for paragraph in response.css('a.newsline.article'):
             yield SplashRequest(url=response.urljoin(url=paragraph.css('::attr(href)').get()),
                                 callback=self.parse_news,
                                 meta={'header': paragraph.css('div.newstext::text').get(),
-                                      'rel_url': response.urljoin(
-                                          url=paragraph.css('::attr(href)').get())},
+                                      'rel_url': response.urljoin(url=paragraph.css('::attr(href)').get())},
                                 endpoint='execute',
                                 args={'wait': 2, 'lua_source': lua_script_start, 'timeout': 60})
