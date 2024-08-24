@@ -1,8 +1,10 @@
 from typing import Any
-from urllib.parse import urljoin
 from scrapy import Spider, Request
 from scrapy.http import Response
 from csv import DictReader
+from deep_translator import GoogleTranslator
+
+
 
 
 class CSPLayersSpider(Spider):
@@ -49,8 +51,7 @@ class CSPLayersSpider(Spider):
             'player_nickname': player_nickname,
             'player_team': player_team,
             'player_age': player_age,
-            'player_country': player_country,
+            'player_country': GoogleTranslator(source='ru', target='en').translate(player_country),
             'player_played_games_last_year': player_played_games_last_year,
             'player_played_games_overall': player_played_games_overall,
-
         }

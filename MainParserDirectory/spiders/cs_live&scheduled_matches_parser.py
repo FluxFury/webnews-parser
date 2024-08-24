@@ -4,8 +4,8 @@ from scrapy import Spider, Request
 from scrapy.http import Response
 
 
-class CSMatchesSpider(Spider):
-    name = "CSMatchesSpider"
+class CSlsMatchesSpider(Spider):
+    name = "CSlsMatchesSpider"
     custom_settings = {
         'DOWNLOADER_MIDDLEWARES': {
             'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
@@ -42,6 +42,10 @@ class CSMatchesSpider(Spider):
         match_format = response.xpath('//div[contains(@class, "score")]/h3/text()').get()
         match_format = match_format.strip()[match_format.find('B'):]
         match_status = response.xpath('//div[contains(@class, "score")]//b/text()').get()
+        if match_status == 'Матч не начался':
+            match_status = 'scheduled'
+        elif match_status == 'Матч начался':
+            match_status = 'live'
         match_url = urljoin(base=base_url, url=response.meta.get('match_url'))
         match_score = response.xpath('//div[contains(@class, "score")]/span[contains(@class, "live")]/text()').getall()
         def TBD_team_page_boolean(team: int) -> bool:
@@ -69,7 +73,7 @@ class CSMatchesSpider(Spider):
 
                'team1': teams[0] if teams[0] != 'players' else 'TBD',
                'team1_score': match_score[0],
-               'team2_score:': match_score[1],
+               'team2_score': match_score[1],
                'team2': teams[1] if teams[1] != 'players' else 'TBD',
 
                'team2_logo_link': teams_logo_links[1]

@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 from scrapy import Spider, Request
 from scrapy.http import Response
 from csv import DictReader
-
+from deep_translator import GoogleTranslator
 
 class CSTeamsSpider(Spider):
     name = "CSTeamsSpider"
@@ -52,7 +52,9 @@ class CSTeamsSpider(Spider):
             data_dict['player_' + str(player_num + 1)] = player.css('span::text').get().strip()
             data_dict['player_' + str(player_num + 1) + '_page_link'] = \
                 urljoin(base=base_url, url=player.css('::attr(href)').get().strip())
-        data_dict['team_region'] = response.css('table.tinfo.table.table-sm tr:nth-child(3) td::text').get().strip()
+
+        data_dict['team_region'] = GoogleTranslator(source='ru', target='en').\
+            translate(response.css('table.tinfo.table.table-sm tr:nth-child(3) td::text').get().strip())
 
         data_dict['matches_played_in_the_last_year'] = \
             response.css('table.tinfo.table.table-sm tr:nth-child(6) td::text').get().split('/')[0].strip()
