@@ -5,8 +5,6 @@ from csv import DictReader
 from deep_translator import GoogleTranslator
 
 
-
-
 class CSPLayersSpider(Spider):
     name = "CSPLayersSpider"
     custom_settings = {
@@ -29,6 +27,7 @@ class CSPLayersSpider(Spider):
                         yield Request(url=row['player_' + str(player_num) + '_page_link'], callback=self.parse)
 
     def parse(self, response: Response, **kwargs: Any) -> Any:
+
         team_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(5) td a::attr(href)').get()
         country_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(4) td::text').get()
         age_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(3) td::text').get()

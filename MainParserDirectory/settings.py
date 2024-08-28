@@ -18,17 +18,19 @@ USER_AGENT = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHT
 
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 8
 
+LOG_LEVEL = 'INFO'
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-SPLASH_TIMEOUT = 5
-DOWNLOAD_TIMEOUT = 1
+SPLASH_TIMEOUT = 150
+DOWNLOAD_TIMEOUT = 180
 SELENIUM_TIMEOUT = 1
-# The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
-#CONCURRENT_REQUESTS_PER_IP = 16
+RETRY_TIMES = 3
+RETRY_WAIT_TIME = 20
+RETRY_HTTP_CODES = [429, 400, 504, 500, 502, 503]
 
 
 # Disable Telnet Console (enabled by default)
@@ -51,6 +53,8 @@ SPIDER_MIDDLEWARES = {
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 401,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    'MainParserDirectory.middlewares.TooManyRequestsRetryMiddleware': 543,
     'scrapy_splash.SplashCookiesMiddleware': 723,
     'scrapy_splash.SplashMiddleware': 725,
     'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
@@ -73,9 +77,9 @@ PROXY_POOL_ENABLED = True
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 1
+AUTOTHROTTLE_START_DELAY = 4
 # The maximum download delay to be set in case of high latencies
-AUTOTHROTTLE_MAX_DELAY = 60
+AUTOTHROTTLE_MAX_DELAY = 100
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
 AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
@@ -87,8 +91,8 @@ AUTOTHROTTLE_DEBUG = True
 HTTPCACHE_ENABLED = True
 HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = "httpcache"
-HTTPCACHE_IGNORE_HTTP_CODES = []
 HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
+HTTPCACHE_IGNORE_HTTP_CODES = [500, 502, 503, 504, 429]
 
 # Set settings whose default value is deprecated to a future-proof value
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"

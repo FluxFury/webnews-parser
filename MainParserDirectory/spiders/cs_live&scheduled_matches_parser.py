@@ -31,7 +31,6 @@ class CSlsMatchesSpider(Spider):
                                        url=response.css('div.header picture img::attr(src)').get())
         tournament_name = response.xpath('//h1//a//text()').get()
         tournament_info = response.xpath('//div[contains(@class,"hh")]/span/text()').get().split('•')
-        print(tournament_info)
         tournament_format = tournament_info[-2].strip()
         tournament_stage = tournament_info[-3].strip()
         teams = response.xpath('//div[contains(@class, "teams-on-live")]//h2/text()').getall()
