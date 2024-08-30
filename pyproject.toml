@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "parser"
+version = "0.1.0"
+description = ""
+authors = ["Jumbik_Tank <oprivetdaent@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+scrapy = "^2.11.2"
+playwright = '<1.46.0'
+undetected-playwright-patch = "^1.40.0.post1700587210000"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

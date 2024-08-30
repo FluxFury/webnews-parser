@@ -10,12 +10,18 @@ class CSPLayersSpider(Spider):
     custom_settings = {
         'DOWNLOADER_MIDDLEWARES': {
             'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-            'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 401,
-            'MainParserDirectory.middlewares.SeleniumMiddleware': 543,
-            'scrapy_splash.SplashCookiesMiddleware': 723,
-            'scrapy_splash.SplashMiddleware': 725,
+            'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': None,
+            'MainParserDirectory.middlewares.StealthMiddleware': 542,
+            'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+            'MainParserDirectory.middlewares.TooManyRequestsRetryMiddleware': 543,
             'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
-        }
+        },
+        'AUTOTHROTTLE_TARGET_CONCURRENCY': 2.0,
+        'HTTPCACHE_ENABLED': False,
+        'USER_AGENT': None,
+        'LOG_LEVEL': 'INFO',
+        'COOKIES_ENABLED': False,
+        'REACTOR_THREADPOOL_MAXSIZE': 20
     }
 
     def start_requests(self):
@@ -25,27 +31,34 @@ class CSPLayersSpider(Spider):
                 for player_num in range(1, 6):
                     if row['player_' + str(player_num)] != '':
                         yield Request(url=row['player_' + str(player_num) + '_page_link'], callback=self.parse)
-
+    def _css_mutator(self, selector: str, response: Response) -> str:
+        placeholder = response.css(selector).get()
+        return placeholder if placeholder else ''
     def parse(self, response: Response, **kwargs: Any) -> Any:
+        table_selector = response.css('table.tinfo.table.table-sm tbody')
+        team_selector = self._css_mutator('tr:nth-child(5) td a::attr(href)', table_selector)
 
-        team_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(5) td a::attr(href)').get()
-        country_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(4) td::text').get()
-        age_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(3) td::text').get()
-        games_selector_1 = response.css('table.tinfo.table.table-sm tbody tr:nth-child(7) td::text').get()
-        games_selector_2 = response.css('table.tinfo.table.table-sm tbody tr:nth-child(7) td span.text-muted::text').get()
-        if response.css('table.tinfo.table.table-sm tbody tr:nth-child(1) th::text').get().strip() != 'Призовые места':
-            team_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(4) td a::attr(href)').get()
-            country_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(3) td::text').get()
-            age_selector = response.css('table.tinfo.table.table-sm tbody tr:nth-child(2) td::text').get()
-            games_selector_1 = response.css('table.tinfo.table.table-sm tbody tr:nth-child(6) td::text').get()
-            games_selector_2 = response.css('table.tinfo.table.table-sm tbody tr:nth-child(6) td span.text-muted::text').get()
-        player_nickname = response.css('div.col-lg-8 h1::text').get().strip()
-        player_team = team_selector.split('/')[-1].strip() if team_selector else team_selector
-        player_age = age_selector.strip().split(' ')[0] if age_selector else age_selector
-        player_country = country_selector.strip() if country_selector else country_selector
-        player_played_games_last_year = games_selector_1.split('/')[0].strip() \
-            if games_selector_1 else games_selector_1
-        player_played_games_overall = games_selector_2.strip() if games_selector_2 else games_selector_2
+        country_selector = self._css_mutator('tr:nth-child(4) td::text', table_selector)
+
+        age_selector = self._css_mutator('tr:nth-child(3) td::text', table_selector)
+
+        games_selector_1 = self._css_mutator('tr:nth-child(7) td::text', table_selector)
+
+        games_selector_2 = self._css_mutator('tr:nth-child(7) td span.text-muted::text', table_selector)
+
+        if self._css_mutator('tr:nth-child(1) th::text', table_selector).strip() \
+                != 'Призовые места':
+            team_selector = self._css_mutator('tr:nth-child(4) td a::attr(href)', table_selector)
+            country_selector = self._css_mutator('tr:nth-child(3) td::text', table_selector)
+            age_selector = self._css_mutator('tr:nth-child(2) td::text', table_selector)
+            games_selector_1 = self._css_mutator('tr:nth-child(6) td::text', table_selector)
+            games_selector_2 = self._css_mutator('tr:nth-child(6) td span.text-muted::text', table_selector)
+        player_nickname = self._css_mutator('div.col-lg-8 h1::text', response).strip()
+        player_team = team_selector.split('/')[-1].strip()
+        player_age = age_selector.strip().split(' ')[0]
+        player_country = country_selector.strip()
+        player_played_games_last_year = games_selector_1.split('/')[0].strip()
+        player_played_games_overall = games_selector_2.strip()
         yield {
             'player_nickname': player_nickname,
             'player_team': player_team,

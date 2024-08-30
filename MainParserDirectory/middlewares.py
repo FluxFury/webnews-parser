@@ -2,62 +2,16 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-import random
 import time
 from seleniumbase import Driver
 from scrapy import signals
 from scrapy.http import HtmlResponse
-from twisted.internet import reactor, defer
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
 from scrapy.utils.response import response_status_message
-
-
-class TutoSpiderMiddleware:
-    # Not all methods need to be defined. If a method is not defined,
-    # scrapy acts as if the spider middleware does not modify the
-    # passed objects.
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
-        s = cls()
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
-
-    def process_spider_input(self, response, spider):
-        # Called for each response that goes through the spider
-        # middleware and into the spider.
-
-        # Should return None or raise an exception.
-        return None
-
-    def process_spider_output(self, response, result, spider):
-        # Called with the results returned from the Spider, after
-        # it has processed the response.
-
-        # Must return an iterable of Request, or item objects.
-        for i in result:
-            yield i
-
-    def process_spider_exception(self, response, exception, spider):
-        # Called when a spider or process_spider_input() method
-        # (from other spider middleware) raises an exception.
-
-        # Should return either None or an iterable of Request or item objects.
-        pass
-
-    def process_start_requests(self, start_requests, spider):
-        # Called with the start requests of the spider, and works
-        # similarly to the process_spider_output() method, except
-        # that it doesn’t have a response associated.
-
-        # Must return only requests (not items).
-        for r in start_requests:
-            yield r
-
-    def spider_opened(self, spider):
-        self.user_agent = random.choice(self.settings.get('USER_AGENT_LIST'))
-        spider.logger.info("Spider opened: %s" % spider.name)
+import asyncio
+from undetected_playwright.async_api import async_playwright, Playwright
+from random import choice
+from MainParserDirectory.spiders.cs_live_scheduled_matches_parser import USER_AGENT
 
 
 class DownloaderMiddleware:
@@ -121,12 +75,10 @@ class SeleniumMiddleware:
         self.driver.quit()
 
 
-
-
 async def async_sleep(delay, return_value=None):
-    deferred = defer.Deferred()
-    reactor.callLater(delay, deferred.callback, return_value)
-    return await deferred
+    await asyncio.sleep(delay)
+    return return_value
+
 
 class TooManyRequestsRetryMiddleware(RetryMiddleware):
     """
@@ -158,11 +110,53 @@ class TooManyRequestsRetryMiddleware(RetryMiddleware):
                     delay = min(self.MAX_DELAY, retry_after)
                 spider.logger.info(f'Retrying {request} in {delay} seconds.')
 
-                spider.crawler.engine.pause()
                 await async_sleep(delay)
-                spider.crawler.engine.unpause()
 
             reason = response_status_message(response.status)
             return self._retry(request, reason, spider) or response
 
         return response
+
+
+class StealthMiddleware:
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls()
+
+    async def _fetch(self, request):
+        async with async_playwright() as p:
+            args = ["--disable-blink-features=AutomationControlled"]
+            browser = await p.chromium.launch(headless=True, args=args)
+            context = await browser.new_context(
+                user_agent=choice(USER_AGENT),
+                locale='en-US',
+                timezone_id='Europe/Helsinki'
+            )
+
+            page = await context.new_page()
+            page.set_default_timeout(60000)
+            await page.goto(request.url, wait_until='domcontentloaded')
+            await asyncio.sleep(6)
+            # await page.screenshot(path='screenshot.png')
+            # await asyncio.sleep(2)
+            #
+            # await page.mouse.move(0, 0)
+            # await page.mouse.move(340, 285)
+            # await page.mouse.down()
+            # await asyncio.sleep(0.1)
+            # await page.mouse.up()
+            # await asyncio.sleep(6)
+            content = await page.content()
+            await browser.close()
+            return content
+
+    async def process_request(self, request, spider):
+        content = await self._fetch(request)
+
+        return HtmlResponse(
+            url=request.url,
+            body=content,
+            encoding='utf-8',
+            request=request
+        )

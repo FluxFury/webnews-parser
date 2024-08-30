@@ -5,17 +5,17 @@ from scrapy import Spider
 from scrapy_splash import SplashRequest
 from scrapy.http import Response
 from scrapy.utils.deprecate import ScrapyDeprecationWarning
-warnings.filterwarnings("ignore", category=ScrapyDeprecationWarning)
 
+warnings.filterwarnings("ignore", category=ScrapyDeprecationWarning)
 
 getLogger('scrapy_user_agents.user_agent_picker').setLevel(ERROR)
 
-lua_script_start = """
+lua_script = """
 function main(splash, args)
-  splash.images_enabled = false
-  assert(splash:go(args.url))
-  assert(splash:wait(0.4))
-  return {
+    splash.images_enabled = false
+    assert(splash:go(args.url))
+    assert(splash:wait(1.0))
+    return {
     html = splash:html()
   }
 end"""
@@ -25,8 +25,8 @@ class CSNewsSpider(Spider):
     name = "CSNewsSpider"
     custom_settings = {'LOG_LEVEL': "INFO",
                        'COOKIES_ENABLED': False,
-                       'DOWNLOAD_TIMEOUT': 60,
-                       'REACTOR_THREADPOOL_MAXSIZE' : 20
+                       'DOWNLOAD_TIMEOUT': 120,
+                       'REACTOR_THREADPOOL_MAXSIZE': 20
                        }
 
     def start_requests(self):
@@ -35,18 +35,18 @@ class CSNewsSpider(Spider):
                      "https://www.hltv.org/news/archive/2024/july"]
         for url in url_array:
             yield SplashRequest(url=url, callback=self.parse, endpoint='execute',
-                                args={'lua_source': lua_script_start, 'timeout': 60, 'wait': 2})
+                                args={'lua_source': lua_script, 'timeout': 60, 'wait': 2})
 
-    def clean_text(self, text: str) -> str:
+    def _clean_text(self, text: str) -> str:
         return text.replace('\u2060', '').replace('\\', '') \
             .replace(']', '').replace('[', '').strip()  # Удаление \u2060, \, [, ]
 
     def parse_news(self, response):
-        news_string = self.clean_text(response.css('p.headertext::text').get()) \
+        news_string = self._clean_text(response.css('p.headertext::text').get()) \
             if response.css("p.headertext::text") else ""
         for piece in response.css('p.news-block'):
-            news_string += ' ' + self.clean_text(piece.xpath('string()').get()) \
-                if news_string else self.clean_text(piece.xpath('string()').get())
+            news_string += ' ' + self._clean_text(piece.xpath('string()').get()) \
+                if news_string else self._clean_text(piece.xpath('string()').get())
         yield {
             "header": response.meta.get('header'),
             "url": response.meta.get('rel_url'),
@@ -66,4 +66,4 @@ class CSNewsSpider(Spider):
                                 meta={'header': paragraph.css('div.newstext::text').get(),
                                       'rel_url': response.urljoin(url=paragraph.css('::attr(href)').get())},
                                 endpoint='execute',
-                                args={'lua_source': lua_script_start})
+                                args={'lua_source': lua_script})
