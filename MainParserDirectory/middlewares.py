@@ -3,7 +3,6 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 import time
-from seleniumbase import Driver
 from scrapy import signals
 from scrapy.http import HtmlResponse
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
@@ -11,7 +10,7 @@ from scrapy.utils.response import response_status_message
 import asyncio
 from undetected_playwright.async_api import async_playwright, Playwright
 from random import choice
-from MainParserDirectory.spiders.cs_live_scheduled_matches_parser import USER_AGENT
+from .spiders.cs_live_scheduled_matches_parser import USER_AGENT
 
 
 class DownloaderMiddleware:
@@ -61,18 +60,18 @@ class DownloaderMiddleware:
         spider.logger.info("Spider opened: %s" % spider.name)
 
 
-class SeleniumMiddleware:
-    def __init__(self):
-        self.driver = Driver(uc=True, headless=True)
-
-    def process_request(self, request, spider):
-        self.driver.get(request.url)
-        time.sleep(0.5)
-        return HtmlResponse(self.driver.current_url, body=self.driver.page_source, encoding='utf-8', request=request)
-
-    def spider_closed(self):
-        self.driver.close()
-        self.driver.quit()
+# class SeleniumMiddleware:
+#     def __init__(self):
+#         self.driver = Driver(uc=True, headless=True)
+#
+#     def process_request(self, request, spider):
+#         self.driver.get(request.url)
+#         time.sleep(0.5)
+#         return HtmlResponse(self.driver.current_url, body=self.driver.page_source, encoding='utf-8', request=request)
+#
+#     def spider_closed(self):
+#         self.driver.close()
+#         self.driver.quit()
 
 
 async def async_sleep(delay, return_value=None):

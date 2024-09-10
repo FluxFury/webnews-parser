@@ -51,22 +51,23 @@ class CSTeamsSpider(Spider):
         return placeholder if placeholder else ''
 
     def parse(self, response: Response, **kwargs: Any) -> Any:
+        if response.css('section.team-ach tr').get() is None:
+            return
         base_url = 'https://escorenews.com'
         data_dict = {'team_name': self._css_mutator \
             ('div.hblock h1::text', response).strip().lower().replace(' ', '-'),
                      'team_page_link': response.url}
         for accomp_num, tournament in enumerate(response.css('section.team-ach tr')):
-            data_dict['accomplishment_' + str(accomp_num + 1)] = self._css_mutator('a.tourNemaIco span::text',
-                                                                                   tournament).strip()
-            data_dict['accomplishment_' + str(accomp_num + 1) + '_place'] = self._css_mutator('td.tplc::text',
-                                                                                              tournament).strip()
+            data_dict['accomplishment_' + str(accomp_num + 1)] = \
+                self._css_mutator('a.tourNemaIco span::text', tournament).strip()
+            data_dict['accomplishment_' + str(accomp_num + 1) + '_place'] = \
+                self._css_mutator('td.tplc::text', tournament).strip()
             data_dict['accomplishment_' + str(accomp_num + 1) + '_prize_pool'] = \
                 tournament.css('span.scm::attr(data-value)').get()
             data_dict['accomplishment_' + str(accomp_num + 1) + '_end_time'] = \
                 self._css_mutator('span.sct::attr(datetime)', tournament).strip()
 
         for player_num, player in enumerate(response.css('a.playerName')[:5]):
-
             data_dict['player_' + str(player_num + 1)] = self._css_mutator('span::text', player).strip()
             status = self._css_mutator('span u::text', player).strip()
             data_dict['player_' + str(player_num + 1) + '_status'] = status if status else 'active player'
@@ -84,4 +85,13 @@ class CSTeamsSpider(Spider):
 
         data_dict['winstreak'] = self._css_mutator \
             ('table.tinfo.table.table-sm tr:nth-child(8) td::text', response).split(' ')[0].strip()
-        yield data_dict
+
+        keys = ['team_name', 'team_page_link', 'team_region']
+        for i in range(1, 6):
+            keys += ['player_' + str(i), 'player_' + str(i) + '_status', 'player_' + str(i) + '_page_link']
+        for i in range(1, 11):
+            keys += ['accomplishment_' + str(i), 'accomplishment_' + str(i) + '_place',
+                     'accomplishment_' + str(i) + '_prize_pool', 'accomplishment_' + str(i) + '_end_time']
+        keys += ['matches_played_in_the_last_year', 'matches_played_overall', 'winstreak']
+
+        yield {key: data_dict.get(key, None) for key in keys}
