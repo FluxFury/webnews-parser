@@ -14,6 +14,7 @@ six = "^1.16.0"
 deep-translator = "^1.11.4"
 undetected-playwright-patch = "^1.40.0.post1700587210000"
 undetected-playwright = "^0.3.0"
+scrapy-user-agents = "^0.1.1"
 
 
 [build-system]

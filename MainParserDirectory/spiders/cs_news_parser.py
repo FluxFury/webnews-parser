@@ -5,7 +5,7 @@ from scrapy import Spider
 from scrapy_splash import SplashRequest
 from scrapy.http import Response
 from scrapy.utils.deprecate import ScrapyDeprecationWarning
-
+import json
 warnings.filterwarnings("ignore", category=ScrapyDeprecationWarning)
 
 getLogger('scrapy_user_agents.user_agent_picker').setLevel(ERROR)
@@ -44,16 +44,13 @@ class CSNewsSpider(Spider):
     def parse_news(self, response):
         news_string = self._clean_text(response.css('p.headertext::text').get()) \
             if response.css("p.headertext::text") else ""
+        paragraph_list = []
+        data_dict = {'header': news_string, 'text': paragraph_list}
         for piece in response.css('p.news-block'):
-            news_string += ' ' + self._clean_text(piece.xpath('string()').get()) \
-                if news_string else self._clean_text(piece.xpath('string()').get())
+            paragraph_list.append(self._clean_text(piece.xpath('string()').get()))
         yield {
-            "header": response.meta.get('header'),
+            "article": json.dumps(data_dict),
             "url": response.meta.get('rel_url'),
-            "text": news_string,
-            "date_time": response.css("div.date::text").get()
-            if response.css("div.date::text").get()
-            else response.css("div.news-with-frag-date::text").get(),
             "unix_time": response.xpath('//div[@class="date"]/@data-unix').get()
             if response.xpath('//div[@class="date"]/@data-unix').get()
             else response.xpath('//div[@class="news-with-frag-date"]/@data-unix').get()

@@ -912,6 +912,20 @@ files = [
 ]
 
 [[package]]
+name = "scrapy-user-agents"
+version = "0.1.1"
+description = "Automatically pick an User-Agent for every request"
+optional = false
+python-versions = "*"
+files = [
+    {file = "scrapy_user_agents-0.1.1-py2.py3-none-any.whl", hash = "sha256:284c9af555f3128697a2953ab3cdb987b160b091a12896562d969cf9e81d1350"},
+    {file = "scrapy_user_agents-0.1.1.win-amd64.zip", hash = "sha256:aa1f78c8cbae42f1a7159c5ea16c2638ac17e78d7d44111d164ed099ec48705f"},
+]
+
+[package.dependencies]
+user-agents = "*"
+
+[[package]]
 name = "service-identity"
 version = "24.1.0"
 description = "Service identity verification for pyOpenSSL & cryptography."
@@ -1056,6 +1070,17 @@ files = [
 ]
 
 [[package]]
+name = "ua-parser"
+version = "0.18.0"
+description = "Python port of Browserscope's user agent parser"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ua-parser-0.18.0.tar.gz", hash = "sha256:db51f1b59bfaa82ed9e2a1d99a54d3e4153dddf99ac1435d51828165422e624e"},
+    {file = "ua_parser-0.18.0-py2.py3-none-any.whl", hash = "sha256:9d94ac3a80bcb0166823956a779186c746b50ea4c9fd9bf30fdb758553c38950"},
+]
+
+[[package]]
 name = "undetected-playwright"
 version = "0.3.0"
 description = "You know who I am"
@@ -1105,6 +1130,20 @@ brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
 h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
+
+[[package]]
+name = "user-agents"
+version = "2.2.0"
+description = "A library to identify devices (phones, tablets) and their capabilities by parsing browser user agent strings."
+optional = false
+python-versions = "*"
+files = [
+    {file = "user-agents-2.2.0.tar.gz", hash = "sha256:d36d25178db65308d1458c5fa4ab39c9b2619377010130329f3955e7626ead26"},
+    {file = "user_agents-2.2.0-py3-none-any.whl", hash = "sha256:a98c4dc72ecbc64812c4534108806fb0a0b3a11ec3fd1eafe807cee5b0a942e7"},
+]
+
+[package.dependencies]
+ua-parser = ">=0.10.0"
 
 [[package]]
 name = "w3lib"
@@ -1171,4 +1210,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e2f56e07d629ed7795a5c071db25d036157e05378015938ff390e83d48428175"
+content-hash = "0705bb907d0090c9e73d8fb2cad8e71c42fe4179572f8d6c387d7fea6c22c38c"

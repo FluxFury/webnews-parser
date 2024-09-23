@@ -10,7 +10,7 @@ from scrapy.utils.response import response_status_message
 import asyncio
 from undetected_playwright.async_api import async_playwright, Playwright
 from random import choice
-from .spiders.cs_live_scheduled_matches_parser import USER_AGENT
+from .spiders.cs_live_scheduled_matches_tournaments_parser import USER_AGENT
 
 
 class DownloaderMiddleware:
