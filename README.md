@@ -23,7 +23,7 @@ To ensure Playwright works correctly, you need to install Playwright itself and 
 poetry install
 poetry run playwright install --with-deps chromium
 ```
-### Resolving "Permission Denied" Errors (Local)
+### Resolving "Permission Denied" Errors
 
 When installing or running Playwright on UNIX-based systems (Linux, macOS), you might encounter "Permission denied" errors for certain files. To resolve this issue, you need to set execute permissions for the relevant files.
 
