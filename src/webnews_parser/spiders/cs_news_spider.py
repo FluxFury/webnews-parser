@@ -22,7 +22,7 @@ class CSNewsSpider(Spider):
                        "ITEM_PIPELINES": {
                            "webnews_parser.pipelines.CSNewsPostgresPipeline": 100,
                        },
-                       "LOG_LEVEL": "DEBUG",
+                       "LOG_LEVEL": "INFO",
                        "COOKIES_ENABLED": False,
                        "USER_AGENT": None,
                        "DOWNLOAD_TIMEOUT": 120,

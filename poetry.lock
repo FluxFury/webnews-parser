@@ -492,7 +492,7 @@ uvicorn = ">=0.15.0"
 type = "git"
 url = "ssh://git@github.com/FluxFury/flux-orm.git"
 reference = "main"
-resolved_reference = "50535cd535c75a0940c255bf14096552989de3f3"
+resolved_reference = "4752fb2e4ab95b02f73db344c46686f77c26ed4d"
 
 [[package]]
 name = "greenlet"

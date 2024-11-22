@@ -1,5 +1,5 @@
 
-BOT_NAME = "CSMatchesSpider"
+BOT_NAME = "CSSpider"
 
 SPIDER_MODULES = ["webnews_parser.spiders"]
 NEWSPIDER_MODULE = "webnews_parser.spiders"

@@ -27,7 +27,7 @@ class CSTeamsSpider(Spider):
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 1.0,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
-        "LOG_LEVEL": "DEBUG",
+        "LOG_LEVEL": "INFO",
         "COOKIES_ENABLED": False,
         "REACTOR_THREADPOOL_MAXSIZE": 20,
     }
@@ -72,12 +72,12 @@ class CSTeamsSpider(Spider):
             self.is_team_links_fetched = True
             for team_link in team_links:
                 yield Request(url=team_link.link, callback=self.parse)
-        if response.css("section.team-ach tr").get() is None:
-            return
         base_url = "https://escorenews.com"
         team_pretty_name = self._css_mutator \
             ("div.hblock h1::text", response).strip()
         team_name = response.url.split("/")[-1]
+        if response.css("section.team-ach tr").get() is None or team_name == "javascript:;":
+            return
         team_logo_link = self._css_mutator("div.tourlogo img::attr(img)", response)
         data_dict = {"team_pretty_name": team_pretty_name, "team_name": team_name, "team_page_link": response.url,
                      'team_logo_link': team_logo_link, "stats": {},

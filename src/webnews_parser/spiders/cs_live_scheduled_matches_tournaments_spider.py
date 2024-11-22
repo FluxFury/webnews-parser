@@ -144,10 +144,10 @@ class CSlsMatchesTournamentsSpider(Spider):
             "team1_logo_link": teams_logo_links[0]
             if TBD_team_logo_boolean(0) or TBD_team_page_boolean(0) else "TBD",
 
-            "team1": teams[0] if teams[0] else "TBD",
+            "team1": teams[0] if teams[0] not in ("javascript:;", '') else "TBD",
             "team1_score": match_score[0],
             "team2_score": match_score[1],
-            "team2": teams[-1] if teams[-1] else "TBD",
+            "team2": teams[-1] if teams[1] not in ("javascript:;", '') else "TBD",
 
             "team2_logo_link": teams_logo_links[-1]
             if TBD_team_logo_boolean(1) or TBD_team_page_boolean(1) else "TBD",

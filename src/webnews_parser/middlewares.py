@@ -14,6 +14,7 @@ from scrapy.exceptions import IgnoreRequest
 from scrapy.http import HtmlResponse
 from scrapy.utils.response import response_status_message
 from sqlalchemy import select
+from undetected_playwright._impl import _errors
 from undetected_playwright.async_api import async_playwright
 
 
@@ -127,7 +128,7 @@ class StealthMiddleware:
             await route.abort()
         else:
             await route.continue_()
-    async def _fetch(self, request, blocked_resources):
+    async def _fetch(self, request, blocked_resources, spider):
         async with async_playwright() as p:
             USER_AGENT = [
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
@@ -142,7 +143,12 @@ class StealthMiddleware:
             page = await context.new_page()
             page.set_default_timeout(120000)
             #await page.route("**/*", block_images_and_unnecessary_elements(blocked_resources))
-            await page.goto(request.url)
+            try:
+                await page.goto(request.url)
+            except _errors.TimeoutError as e:
+                spider.logger.error(f"Timeout error: {e}")
+                await browser.close()
+                return
             await asyncio.sleep(10)
             content = await page.content()
             await browser.close()
@@ -152,7 +158,7 @@ class StealthMiddleware:
         blocked_resources = ["image", "font", "stylesheet"]
         if "hltv.org" in request.url:
             blocked_resources = []
-        content = await self._fetch(request, blocked_resources)
+        content = await self._fetch(request, blocked_resources, spider)
         return HtmlResponse(
             url=request.url,
             body=content,

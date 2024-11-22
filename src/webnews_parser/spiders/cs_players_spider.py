@@ -25,7 +25,7 @@ class CSPlayersSpider(Spider):
         "ITEM_PIPELINES": {
             "webnews_parser.pipelines.CSPlayersPostgresPipeline": 100,
         },
-        "AUTOTHROTTLE_TARGET_CONCURRENCY": 1.0,
+        "AUTOTHROTTLE_TARGET_CONCURRENCY": 0.5,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
         "LOG_LEVEL": "INFO",

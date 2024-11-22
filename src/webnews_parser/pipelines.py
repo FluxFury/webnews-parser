@@ -1,10 +1,13 @@
 from datetime import datetime
 
+import asyncpg
 from flux_orm.models.models import Competition, Match, MatchStatus, RawNews, Sport, Team, TeamLink, TeamMember, \
     PlayerLink
 from flux_orm.database import new_session
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import lazyload
 
 
 class CSLSMLiveMatchesAndTournamentPostgresPipeline:
@@ -23,7 +26,7 @@ class CSLSMLiveMatchesAndTournamentPostgresPipeline:
                                                                     match_start_date_format) if mtitem[
             "match_begin_time"] else None
         async with new_session(expire_on_commit=True, autoflush=False) as session:
-            stmt = select(Sport).filter_by(name="CS2")
+            stmt = select(Sport).options(lazyload(Sport.competitions)).filter_by(name="CS2")
             cs_sport = await session.execute(stmt)
             cs_sport = cs_sport.scalars().first()
             if mtitem["has_tournament_info"]:
@@ -93,8 +96,6 @@ class CSLSMLiveMatchesAndTournamentPostgresPipeline:
             stmt = select(Match).filter_by(match_name=match_name)
             local_match_updated = await session.execute(stmt)
             local_match_updated = local_match_updated.scalars().first()
-            session.add(local_match_updated)
-            print(1)
             if mtitem["has_tournament_info"]:
                 for team in teams_in_match_updated:
                     if team not in local_tournament_updated.teams:
@@ -121,7 +122,6 @@ class CSLSMLiveMatchesAndTournamentPostgresPipeline:
                 local_match_updated.match_status = local_match_status_updated
 
             local_match_updated.match_teams = teams_in_match_updated
-            print("commiting..")
             await session.commit()
         await CSLSMLiveMatchesAndTournamentPostgresPipeline.commit_team_links(mtitem)
 
@@ -140,7 +140,6 @@ class CSLSMLiveMatchesAndTournamentPostgresPipeline:
             if not second_team_link and mtitem["team2_page_link"] != "TBD":
                 second_team_link = TeamLink(link=mtitem["team2_page_link"])
                 session.add(second_team_link)
-            print("commiting team links..")
             await session.commit()
 
 
@@ -152,7 +151,7 @@ class CSNewsPostgresPipeline:
     @staticmethod
     async def commit_data(nitem):
         async with new_session(expire_on_commit=True, autoflush=False) as session:
-            stmt = select(Sport).filter_by(name="CS2")
+            stmt = select(Sport).options(lazyload(Sport.competitions)).filter_by(name="CS2")
             cs_sport = await session.execute(stmt)
             cs_sport = cs_sport.scalars().first()
             try:
@@ -163,7 +162,7 @@ class CSNewsPostgresPipeline:
                     news_creation_time = None
             except (ValueError, OSError) as e:
                 news_creation_time = None
-                print(f"Ошибка при обработке unix_time {nitem['unix_time']}: {e}")
+                print(f"Error processing unix_time {nitem['unix_time']}: {e}")
 
             local_news = RawNews(header=nitem["header"],
                                  text=nitem["text"],
@@ -285,11 +284,11 @@ class CSTeamsPostgresPipeline:
 
 class CSPlayersPostgresPipeline:
     async def process_item(self, item, spider):
-        await self.commit_data(item)
+        await self.commit_data(item, spider)
         return item
 
     @staticmethod
-    async def commit_data(pitem):
+    async def commit_data(pitem, spider):
         async with new_session(expire_on_commit=True, autoflush=False) as session:
             stmt = select(Team).filter_by(name=pitem["player_team"])
             team = await session.execute(stmt)
@@ -318,5 +317,8 @@ class CSPlayersPostgresPipeline:
                     "played_games_last_year": pitem["player_played_games_last_year"],
                     "played_games_overall": pitem["player_played_games_overall"],
                 }
-
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError as e:
+                spider.logger.info(f"Constraint violation error while committing player {pitem['player_nickname']} to the database: {e}")
+                await session.rollback()
