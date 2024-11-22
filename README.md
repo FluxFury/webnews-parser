@@ -49,6 +49,26 @@ sudo chmod +x /usr/local/lib/python3.12/site-packages/undetected_playwright/driv
 
 ## Container usage
 
+### .env File Example
+#### Local usage
+``` bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=fluxbackendwsl
+DB_USER=postgres
+DB_PASS=postgres
+DB_URL=postgres://postgres:postgres@localhost:5432/fluxbackendwsl
+```
+#### Container usage
+```bash
+DB_HOST=host.docker.internal
+DB_PORT=5432
+DB_NAME=fluxbackendwsl
+DB_USER=postgres
+DB_PASS=postgres
+DB_URL=postgres://postgres:postgres@host.docker.internal:5432/fluxbackendwsl
+```
+
 ### Launching the Scrapyd Server
 
 To launch the Scrapyd server, use Docker Compose. Ensure you have Docker and Docker Compose installed on your system.
