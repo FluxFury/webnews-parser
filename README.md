@@ -15,6 +15,16 @@
   - [Available Commands](#available-commands)
 ## Local Installation
 
+### .env File example
+``` bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=fluxbackendwsl
+DB_USER=postgres
+DB_PASS=postgres
+DB_URL=postgres://postgres:postgres@localhost:5432/fluxbackendwsl
+```
+
 ### Install Playwright and Browsers
 
 To ensure Playwright works correctly, you need to install Playwright itself and the corresponding browsers. Execute the following commands:
@@ -50,16 +60,6 @@ sudo chmod +x /usr/local/lib/python3.12/site-packages/undetected_playwright/driv
 ## Container usage
 
 ### .env File Example
-#### Local usage
-``` bash
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=fluxbackendwsl
-DB_USER=postgres
-DB_PASS=postgres
-DB_URL=postgres://postgres:postgres@localhost:5432/fluxbackendwsl
-```
-#### Container usage
 ```bash
 DB_HOST=host.docker.internal
 DB_PORT=5432
