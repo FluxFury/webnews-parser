@@ -83,7 +83,7 @@ This command starts the containers required for Scrapyd, including the server an
 
 ### Scheduling the Spider
 
-After launching the Scrapyd server, you can schedule the spider to run using the `schedule.py` script.
+After launching the Scrapyd server, you can schedule the spider to run using the `schedule_*.py` script.
 
 **Run the Scheduling Script:**
 
