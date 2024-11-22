@@ -1,0 +1,33 @@
+version: '3'
+services:
+  scrapyd:
+    build:
+      context: .
+      ssh:
+        - default
+    container_name: scrapyd-ff-server
+    ports:
+      - "6800:6800"
+    volumes:
+      - ./src/scrapyd.conf:/etc/scrapyd/scrapyd.conf
+    environment:
+      - DB_URL
+      - DB_HOST
+      - DB_PORT
+      - DB_NAME
+      - DB_USER
+      - DB_PASS
+    restart: unless-stopped
+#  db:
+#    image: postgres:17
+#    container_name: ff-db
+#    environment:
+#      - DB_URL
+#      - DB_HOST
+#      - DB_PORT
+#      - DB_NAME
+#      - DB_USER
+#      - DB_PASS
+#    ports:
+#      - "5433:5433"
+#    restart: unless-stopped
