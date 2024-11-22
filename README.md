@@ -1,7 +1,7 @@
 
 # UpWorkSpider
 
-**UpWorkSpider** is a project using Scrapy and Playwright to automate data collection from the UpWork platform. This guide outlines the steps for installing dependencies, setting up the environment, and running the project.
+**UpWorkSpider** is a project using Scrapy and Playwright to automate data collection from the Escore and HLTV websites. This guide outlines the steps for installing dependencies, setting up the environment, and running the project.
 
 ## Contents
 
