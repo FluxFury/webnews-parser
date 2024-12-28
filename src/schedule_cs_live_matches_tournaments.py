@@ -1,7 +1,5 @@
-import os
 
 import requests
-from dotenv import load_dotenv
 
 url = "http://localhost:6800/schedule.json"
 

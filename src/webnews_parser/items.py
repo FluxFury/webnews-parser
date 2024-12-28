@@ -4,13 +4,14 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
+from scrapy import Field, Item
 
 
 class CSNewsItem(scrapy.Item):
     header = scrapy.Field()
     text = scrapy.Field()
     url = scrapy.Field()
-    unix_time = scrapy.Field()
+    news_creation_time = scrapy.Field()
 
 
 class CSLSMatchesTournamentsItem(scrapy.Item):
@@ -29,6 +30,7 @@ class CSLSMatchesTournamentsItem(scrapy.Item):
     match_begin_time = scrapy.Field()
     match_streams = scrapy.Field()
     pretty_match_name = scrapy.Field()
+    external_id = scrapy.Field()
 
     has_tournament_info = scrapy.Field()
 
@@ -46,6 +48,8 @@ class CSPMatchesItem(scrapy.Item):
     team1_score = scrapy.Field()
     team2_score = scrapy.Field()
     team2 = scrapy.Field()
+    match_name = scrapy.Field()
+    external_id = scrapy.Field()
 
 
 class CSPlayersItem(scrapy.Item):
@@ -56,6 +60,9 @@ class CSPlayersItem(scrapy.Item):
     player_country = scrapy.Field()
     player_played_games_last_year = scrapy.Field()
     player_played_games_overall = scrapy.Field()
+    player_status = scrapy.Field()
+    team_member_url = scrapy.Field()
+    image_url = scrapy.Field()
 
 
 class CSTeamsItem(scrapy.Item):
@@ -67,4 +74,22 @@ class CSTeamsItem(scrapy.Item):
     stats = scrapy.Field()
     players = scrapy.Field()
     regalia = scrapy.Field()
+
+
+class CSCreateLiveScheduledMatchesItem(Item):
+    planned_start_datetime = Field()
+    match_url = Field()
+    match_name = Field()
+    external_id = Field()
+    match_status = Field()
+
+
+class CSUpdateTournamentsItem(Item):
+    match_id = Field()
+    tournament_name = Field()
+    tournament_location = Field()
+    tournament_logo_link = Field()
+    tournament_description = Field()
+    tournament_start_date = Field()
+    tournament_prize_pool = Field()
 

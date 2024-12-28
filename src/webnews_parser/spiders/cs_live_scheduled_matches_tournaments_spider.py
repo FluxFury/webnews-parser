@@ -1,4 +1,5 @@
 import os
+import random
 import re
 from html import unescape
 from typing import Any
@@ -9,7 +10,16 @@ from dotenv import load_dotenv
 from scrapy import Request, Spider
 from scrapy.http import Response
 
+from webnews_parser.settings import PLAYWRIGHT_ARGS, PLAYWRIGHT_USER_AGENTS
+
 from ..items import CSLSMatchesTournamentsItem
+from ..utils.spider_utils import (
+    clean_text,
+    css_mutator,
+    xpath_mutator,
+    xpath_mutator_all,
+)
+
 
 class CSlsMatchesTournamentsSpider(Spider):
     name = "CSlsMatchesTournamentsSpider"
@@ -20,7 +30,7 @@ class CSlsMatchesTournamentsSpider(Spider):
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
             "scrapy_user_agents.middlewares.RandomUserAgentMiddleware": None,
             "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
-            "webnews_parser.middlewares.StealthMiddleware": 542,
+            "webnews_parser.middlewares.PatchrightMiddleware": 542,
             "webnews_parser.middlewares.TooManyRequestsRetryMiddleware": 543,
             "scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware": 810,
         },
@@ -39,25 +49,9 @@ class CSlsMatchesTournamentsSpider(Spider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.visited_tournament_urls = set()
-
-    @staticmethod
-    def _xpath_mutator(selector: str, response: Response) -> str:
-        placeholder = response.xpath(selector).get()
-        return placeholder or ""
-
-    @staticmethod
-    def _xpath_mutator_all(selector: str, response: Response) -> str:
-        placeholder = response.xpath(selector).getall()
-        return placeholder or ""
-
-    @staticmethod
-    def _css_mutator(selector: str, response: Response) -> str:
-        placeholder = response.css(selector).get()
-        return placeholder or ""
-
-    @staticmethod
-    def _clean_text(text: str) -> str:
-        return normalize("NFKD", text.strip())
+        self.blocked_resources = ["image", "font", "stylesheet"]
+        self.browser_args = PLAYWRIGHT_ARGS
+        self.user_agent = random.choice(PLAYWRIGHT_USER_AGENTS)
 
     def start_requests(self):
         url_array = ["https://escorenews.com/en/csgo/matches?s1=" + str(page_num) for page_num in range(1, 3)]
@@ -70,7 +64,7 @@ class CSlsMatchesTournamentsSpider(Spider):
                   + table_1.css("a.article.type0.v_gl704")
         for match in matches:
             scheduled_match_url = match.css("::attr(href)").get()
-            scheduled_match_begin_time = self._css_mutator("div.time i.sct::attr(datetime)", match)
+            scheduled_match_begin_time = css_mutator("div.time i.sct::attr(datetime)", match)
             if scheduled_match_url.count("tbd") < 2:
                 placeholder_dict = {"match_begin_time": scheduled_match_begin_time,
                                     "match_url": scheduled_match_url}
@@ -82,7 +76,7 @@ class CSlsMatchesTournamentsSpider(Spider):
     def parse_match_page(self, response: Response, **kwargs: Any) -> Any:
 
         tournament_link = urljoin(base=self.base_url, url=response.xpath("//h1//a/@href").get())
-        tournament_info = self._xpath_mutator('//div[contains(@class,"hh")]/span/text()', response).split("•")
+        tournament_info = xpath_mutator('//div[contains(@class,"hh")]/span/text()', response).split("•")
         tournament_format = tournament_info[-2].strip() if tournament_info != [""] else ""
         tournament_stage = tournament_info[-3].strip() if tournament_info != [""] else ""
         pretty_teams = response.xpath('//div[contains(@class, "teams-on-live")]//h2/text()').getall()
@@ -99,7 +93,7 @@ class CSlsMatchesTournamentsSpider(Spider):
             teams_page_links = ("", "")
         if not teams:
             teams = ("", "")
-        match_format = self._xpath_mutator('//div[contains(@class, "score")]/h3/text()', response)
+        match_format = xpath_mutator('//div[contains(@class, "score")]/h3/text()', response)
         match_format = match_format.strip()[match_format.find("B"):]
         match_status = response.xpath('//div[contains(@class, "score")]//b/text()').get()
         if match_status == "Match did not start":
@@ -123,8 +117,8 @@ class CSlsMatchesTournamentsSpider(Spider):
         match_streams = {}
         twitch_url = "https://www.twitch.tv/"
         for stream_info in response.css("div.os-padding div.si"):
-            stream_name = self._css_mutator("b::text", stream_info).strip()
-            stream_author_and_language = self._css_mutator("u::text", stream_info).strip().split()
+            stream_name = css_mutator("b::text", stream_info).strip()
+            stream_author_and_language = css_mutator("u::text", stream_info).strip().split()
             stream_author = stream_author_and_language[-1]
             stream_language = stream_author_and_language[-2]
             stream_viewers = stream_info.css("u i::text").get()
@@ -144,10 +138,10 @@ class CSlsMatchesTournamentsSpider(Spider):
             "team1_logo_link": teams_logo_links[0]
             if TBD_team_logo_boolean(0) or TBD_team_page_boolean(0) else "TBD",
 
-            "team1": teams[0] if teams[0] not in ("javascript:;", '') else "TBD",
+            "team1": teams[0] if teams[0] not in ("javascript:;", "") else "TBD",
             "team1_score": match_score[0],
             "team2_score": match_score[1],
-            "team2": teams[-1] if teams[1] not in ("javascript:;", '') else "TBD",
+            "team2": teams[-1] if teams[1] not in ("javascript:;", "") else "TBD",
 
             "team2_logo_link": teams_logo_links[-1]
             if TBD_team_logo_boolean(1) or TBD_team_page_boolean(1) else "TBD",
@@ -184,11 +178,11 @@ class CSlsMatchesTournamentsSpider(Spider):
         bool_location_identifier = response.xpath(
             '//table[contains(@class, "tinfo table table-sm")]/tbody/tr[6]/td/span').get()
         tournament_name = response.css("div.hh h1::text").get()
-        tournament_location = self._xpath_mutator(
+        tournament_location = xpath_mutator(
             '//table[contains(@class, "tinfo table table-sm")]/tbody/tr[6]/td/text()', response).strip()
         tournament_logo_link = urljoin(self.base_url, response.css("div.tourlogo picture img::attr(src)").get())
         tournmaent_description_raw = (
-            self._xpath_mutator_all("//div[@class='tourdescription']//text()", response))
+            xpath_mutator_all("//div[@class='tourdescription']//text()", response))
         tournament_description_fixed = ""
         for text in tournmaent_description_raw:
             stripped_text = text.strip()
@@ -196,23 +190,23 @@ class CSlsMatchesTournamentsSpider(Spider):
                 tournament_description_fixed += " " + stripped_text
             else:
                 tournament_description_fixed += stripped_text
-        tournmaent_description = self._clean_text(unescape(tournament_description_fixed))
-        tournament_start_date = self._xpath_mutator('//table[contains(@class, "tinfo table table-sm")]'
+        tournmaent_description = clean_text(unescape(tournament_description_fixed))
+        tournament_start_date = xpath_mutator('//table[contains(@class, "tinfo table table-sm")]'
                                                     '/tbody/tr[3]/td[contains(@class, "sct")]/@datetime',
                                                     response).split(" ")[0]
-        tournament_prize_pool = self._xpath_mutator(
+        tournament_prize_pool = xpath_mutator(
             '//table[contains(@class, "tinfo table table-sm")]/tbody/tr[4]/td[contains(@class, "scm")]/text()',
             response)
         if not tournament_location:
-            tournament_location_alt = self._xpath_mutator(
+            tournament_location_alt = xpath_mutator(
                 "/html/body/div[1]/main/div[3]/div/div/div[1]/div/table/tbody/tr[5]/td/text()", response).strip()
             pattern = re.compile(r"x\d$")
             if not pattern.search(tournament_location_alt):
                 tournament_location = tournament_location_alt
         if not tournament_prize_pool:
-            tournament_prize_pool = self._css_mutator(
+            tournament_prize_pool = css_mutator(
                 "body > div.wrap > main > div.page-topper > div > div > div.col-lg-4.order-last > div > table > tbody > tr:nth-child(3) > td::text", response)
-            tournament_location = self._css_mutator(
+            tournament_location = css_mutator(
                 "body > div.wrap > main > div.page-topper > div > div > div.col-lg-4.order-last > div > table > tbody > tr:nth-child(5) > td::text", response)
 
         data_to_save = {"tournament_name": tournament_name,

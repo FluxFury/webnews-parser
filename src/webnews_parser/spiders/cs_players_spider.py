@@ -1,29 +1,40 @@
-from typing import Any
+import random
+from typing import Any, Iterator
 from urllib.parse import urljoin
 
-from flux_orm.database import new_session
-from flux_orm.models.models import PlayerLink
+from flux_orm.database import new_sync_session
+from flux_orm.models.models import Team
 from scrapy import Request, Spider
 from scrapy.http import Response
 from sqlalchemy import select
 
+from webnews_parser.settings import PLAYWRIGHT_ARGS, PLAYWRIGHT_USER_AGENTS
+
 from ..items import CSPlayersItem
+from ..loaders import CSPlayersItemLoader
+from ..utils.spider_utils import css_mutator, xpath_mutator, xpath_mutator_all
 
 
 class CSPlayersSpider(Spider):
-    name = "CSPlayersSpider"
-    base_url = "https://escorenews.com"
-    custom_settings = {
+    """
+    A spider to scrape and parse CS:GO player data.
+
+    Fetches player details including their team, statistics, and personal information.
+    """
+
+    name: str = "CSPlayersSpider"
+    
+    custom_settings: dict[str, Any] = {  # noqa: RUF012
         "DOWNLOADER_MIDDLEWARES": {
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
             "scrapy_user_agents.middlewares.RandomUserAgentMiddleware": None,
-            "webnews_parser.middlewares.StealthMiddleware": 542,
             "scrapy.downloadermiddlewares.retry.RetryMiddleware": None,
+            "webnews_parser.middlewares.PatchrightMiddleware": 542,
             "webnews_parser.middlewares.TooManyRequestsRetryMiddleware": 543,
             "scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware": 810,
         },
         "ITEM_PIPELINES": {
-            "webnews_parser.pipelines.CSPlayersPostgresPipeline": 100,
+            "webnews_parser.pipelines.CSPlayersPipeline": 100,
         },
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 0.5,
         "HTTPCACHE_ENABLED": False,
@@ -33,70 +44,161 @@ class CSPlayersSpider(Spider):
         "REACTOR_THREADPOOL_MAXSIZE": 20
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the spider with provided arguments."""
         super().__init__(*args, **kwargs)
-        self.is_player_links_fetched = False
+        self.browser_args = PLAYWRIGHT_ARGS
+        self.user_agent = random.choice(PLAYWRIGHT_USER_AGENTS)
+        self.base_url: str = "https://escorenews.com"
+        self.team_urls = self._get_team_urls_from_db()
 
-    @staticmethod
-    def _css_mutator(selector: str, response: Response) -> str:
-        placeholder = response.css(selector).get()
-        return placeholder or ""
+    def _get_team_urls_from_db(self) -> list[str]:
+        """
+        Get team URLs from the database.
 
-    def start_requests(self):
-        url = 'https://escorenews.com/en/csgo/player'
-        yield Request(url=url, callback=self.get_first_link)
+        Returns:
+            list[str]: List of team URLs to scrape.
+        """
+        with new_sync_session() as session:
+            stmt = select(Team)
+            teams = session.execute(stmt).scalars().all()
+            
+            team_urls = set()
+            for team in teams:
+                if team.team_url:
+                    team_url = urljoin(self.base_url, team.team_url)
+                    team_urls.add(team_url)
+            
+            return list(team_urls)
 
-    def get_first_link(self, response: Response):
-        first_player_link = urljoin(base=self.base_url, url=response.css("a.playername::attr(href)").get())
-        yield Request(url=first_player_link, callback=self.parse)
+    def start_requests(self) -> Iterator[Request]:
+        """
+        Start the spider by issuing requests to team pages.
 
-    @staticmethod
-    async def get_player_links():
-        async with new_session() as session:
-            stmt = select(PlayerLink)
-            result = await session.execute(stmt)
-            player_links = result.scalars().all()
-            return player_links
-    async def parse(self, response: Response, **kwargs: Any) -> Any:
-        if not self.is_player_links_fetched:
-            self.is_player_links_fetched = True
-            player_links = await self.get_player_links()
-            for player_link in player_links:
-                yield Request(url=player_link.link, callback=self.parse)
+        Yields:
+            Request: Requests for team pages.
+        """
+        for team_url in self.team_urls:
+            yield Request(url=team_url, callback=self.parse_team_page)
+
+    def parse_team_page(self, response: Response) -> Iterator[Request]:
+        """
+        Parse team page and extract player links.
+
+        Args:
+            response: The response containing the team page.
+
+        Yields:
+            Request: Requests for individual player pages.
+        """
+        players = response.xpath('//div[contains(@class,"hblock")]/h2[contains(text(),"Roster")]'
+                                         '/parent::*/parent::*/table/tbody/tr/td/a')
+        
+        for player_link in players.xpath(".//@href"):
+            player_status = self._get_player_status(player_link.xpath(".//span/u/text()").get())
+            full_url = urljoin(self.base_url, player_link.get())
+            yield Request(url=full_url, callback=self.parse_player, meta={"delay": 10}, cb_kwargs={"player_status": player_status})
+
+    def parse_player(self, response: Response, **kwargs: Any) -> Iterator[CSPlayersItem]:
+        """
+        Parse individual player pages and extract player data.
+
+        Args:
+            response: The response containing the player page.
+            **kwargs: Additional keyword arguments.
+
+        Yields:
+            CSPlayersItem: Processed player data item.
+        """
         table_selector = response.css("table.tinfo.table.table-sm tbody")
-        team_selector = self._css_mutator("tr:nth-child(5) td a::attr(href)", table_selector)
+        
+        # Determine if the table structure is standard or alternative
+        is_standard_layout = css_mutator(
+            "tr:nth-child(1) th::text", 
+            table_selector
+        ).strip() == "Top places"
 
-        country_selector = self._css_mutator("tr:nth-child(4) td::text", table_selector)
+        # Extract player data using the appropriate selectors
+        player_data = self._extract_player_data(response, table_selector, is_standard_layout)
+        
+        loader = CSPlayersItemLoader(item=CSPlayersItem())
+        for field, value in player_data.items():
+            loader.add_value(field, value)
+        item = loader.load_item()   
+        yield item
 
-        age_selector = self._css_mutator("tr:nth-child(3) td::text", table_selector)
+    def _extract_player_data(
+        self, 
+        response: Response, 
+        table_selector: Response, 
+        is_standard_layout: bool
+    ) -> dict[str, str]:
+        """
+        Extract player information from the response.
 
-        games_selector_1 = self._css_mutator("tr:nth-child(7) td::text", table_selector)
+        Args:
+            response: The full response object.
+            table_selector: The table section of the response.
+            is_standard_layout: Whether the page uses standard layout.
 
-        games_selector_2 = self._css_mutator("tr:nth-child(7) td span.text-muted::text", table_selector)
-
-        if self._css_mutator("tr:nth-child(1) th::text", table_selector).strip() \
-                != "Top places":
-            team_selector = self._css_mutator("tr:nth-child(4) td a::attr(href)", table_selector)
-            country_selector = self._css_mutator("tr:nth-child(3) td::text", table_selector)
-            age_selector = self._css_mutator("tr:nth-child(2) td::text", table_selector)
-            games_selector_1 = self._css_mutator("tr:nth-child(6) td::text", table_selector)
-            games_selector_2 = self._css_mutator("tr:nth-child(6) td span.text-muted::text", table_selector)
-        player_nickname = self._css_mutator("div.col-lg-8 h1::text", response).strip()
-        player_name = self._css_mutator("div.col-lg-8 h1 small::text", response).strip()
-        player_team = team_selector.split("/")[-1].strip()
-        player_age = age_selector.strip().split(" ")[0]
-        player_country = country_selector.strip()
-        player_played_games_last_year = games_selector_1.split("/")[0].strip()
-        player_played_games_overall = games_selector_2.strip()
-        data_dict = {
-            "player_nickname": player_nickname,
-            "player_name": player_name,
-            "player_team": player_team,
-            "player_age": player_age,
-            "player_country": player_country,
-            "player_played_games_last_year": player_played_games_last_year,
-            "player_played_games_overall": player_played_games_overall,
+        Returns:
+            dict: Dictionary containing player data.
+        """
+        # Select appropriate row indices based on layout
+        indices = {
+            "team": 5 if is_standard_layout else 4,
+            "country": 4 if is_standard_layout else 3,
+            "age": 3 if is_standard_layout else 2,
+            "games": 7 if is_standard_layout else 6
         }
-        data_item = CSPlayersItem()
-        data_item.update(data_dict)
-        yield data_item
+
+        # Extract data using the determined indices
+        team_selector = css_mutator(
+            f"tr:nth-child({indices['team']}) td a::attr(href)", 
+            table_selector
+        )
+        country_selector = css_mutator(
+            f"tr:nth-child({indices['country']}) td::text", 
+            table_selector
+        )
+        age_selector = css_mutator(
+            f"tr:nth-child({indices['age']}) td::text", 
+            table_selector
+        )
+        games_selector_1 = css_mutator(
+            f"tr:nth-child({indices['games']}) td::text", 
+            table_selector
+        )
+        games_selector_2 = css_mutator(
+            f"tr:nth-child({indices['games']}) td span.text-muted::text", 
+            table_selector
+        )
+
+        return {
+            "player_nickname": css_mutator(
+                "div.col-lg-8 h1::text", 
+                response
+            ).strip(),
+            "player_name": css_mutator(
+                "div.col-lg-8 h1 small::text", 
+                response
+            ).strip(),
+            "player_team": team_selector.split("/")[-1].strip(),
+            "player_age": age_selector.strip().split(" ")[0],
+            "player_country": country_selector.strip(),
+            "player_played_games_last_year": games_selector_1.split("/")[0].strip(),
+            "player_played_games_overall": games_selector_2.strip(),
+            "player_status": response.cb_kwargs.get("player_status"),
+            "team_member_url": urljoin(self.base_url, response.url),
+            "image_url": response.css("div.col-lg-4 img::attr(src)").get()
+        }
+
+    @staticmethod
+    def _get_player_status(player_status: str) -> str:
+        """
+        Extract player statistics from the response.
+        """
+        
+        if player_status == "stand-in":
+            return "stand-in"
+        return "active player"
