@@ -164,7 +164,10 @@ class PatchrightMiddleware:
         )
 
         try:
-            await page.goto(request.url, wait_until="networkidle")
+            if request.meta.get("no_wait_until_networkidle"):
+                await page.goto(request.url, wait_until="domcontentloaded")
+            else:
+                await page.goto(request.url, wait_until="networkidle")
             await asyncio.sleep(request.meta.get("delay", 0))
             return await page.content()
         except _errors.TimeoutError as e:

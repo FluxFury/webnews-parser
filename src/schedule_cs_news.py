@@ -1,15 +1,17 @@
+import os
+import pathlib
 
-import requests
+from dotenv import load_dotenv
 
-url = "http://localhost:6800/schedule.json"
+path_to_env = pathlib.Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=path_to_env / ".env.local", override=True)
 
-data = {"project": "webnews_parser",
-        "spider": "CSNewsSpider",
-}
+from main import scrapyd, settings
 
-response = requests.post(url, data=data)
+job_id = scrapyd.schedule(
+    "webnews_parser",
+    "CSNewsSpider",
+    setting=settings,
+)
 
-if response.status_code == 200:
-    print(response.json())
-else:
-    print(response.json())
+print(job_id)

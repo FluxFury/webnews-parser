@@ -12,10 +12,11 @@ from ..loaders import CSPMatchesItemLoader
 from ..utils.spider_utils import (
     clean_text,
     css_mutator,
+    extract_teams,
     xpath_mutator,
     xpath_mutator_all,
 )
-from ..utils.spider_utils import css_mutator, extract_teams
+
 
 class CSpMatchesSpider(Spider):
     """

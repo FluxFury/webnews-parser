@@ -43,7 +43,7 @@ class CSNewsSpider(Spider):
         "DOWNLOAD_TIMEOUT": 120,
         "DB_URL": os.getenv("DB_URL"),
         "HTTPCACHE_ENABLED": True,
-        "CONCURRENT_REQUESTS": 4,
+        "CONCURRENT_REQUESTS": 8,
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -61,7 +61,7 @@ class CSNewsSpider(Spider):
         """
         url_array = ["https://www.hltv.org/news/archive/2024/december"]
         for url in url_array:
-            yield Request(url=url, callback=self.parse)
+            yield Request(url=url, callback=self.parse, meta={"no_wait_until_networkidle": True})
 
     def parse(self, response: Response, **kwargs: Any) -> Iterator[Request]:
         """
@@ -83,6 +83,7 @@ class CSNewsSpider(Spider):
                     url=next_url,
                     callback=self.parse_news,
                     cb_kwargs={"rel_url": rel_url},
+                    meta={"no_wait_until_networkidle": True}
                 )
 
     def parse_news(self, response: Response, **kwargs: Any) -> Iterator[CSNewsItem]:

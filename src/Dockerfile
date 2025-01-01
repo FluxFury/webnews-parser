@@ -1,5 +1,5 @@
 # Build an egg.
-FROM python as build-stage
+FROM python AS build-stage
 
 RUN pip install --no-cache-dir scrapyd-client
 
@@ -64,6 +64,8 @@ COPY src/scrapyd.conf /etc/scrapyd/
 RUN mkdir -p /var/lib/scrapyd/eggs/webnews_parser
 
 COPY --from=build-stage /workdir/webnews_parser.egg /var/lib/scrapyd/eggs/webnews_parser/1.egg
+
+COPY ../pg_db/init-scripts/entrypoint.sh /entrypoint.sh
 
 RUN poetry run patchright install chromium --with-deps
 

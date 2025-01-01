@@ -155,7 +155,6 @@ class CSUpdateLiveScheduledMatchesPipeline:
             match_status_data = {
                 "name": item["match_status"],
                 "status": {
-                    "name": item["match_status"],
                     "team1_score": item["team1_score"],
                     "team2_score": item["team2_score"],
                     "match_format": item["match_format"],
@@ -374,7 +373,7 @@ class CSPlayersPipeline:
         """
         async with new_session() as session:
             # Check if player exists by nickname
-            stmt = select(TeamMember).filter_by(nickname=item.get("player_nickname"))
+            stmt = select(TeamMember).filter_by(nickname=item.get("team_member_url"))
             result = await session.execute(stmt)
             player = result.scalar_one_or_none()
 
@@ -455,7 +454,6 @@ class CSPastMatchesPostgresPipeline:
                 match_status = MatchStatus()
                 match_status.name = "finished"
                 match_status.status = {
-                    "name": "finished",
                     "team1_score": item.get("team1_score"),
                     "team2_score": item.get("team2_score"),
                 }

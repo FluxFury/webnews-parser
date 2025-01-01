@@ -26,7 +26,6 @@ class CSUpdateLiveScheduledMatchesSpider(Spider):
         "USER_AGENT": None,
         "LOG_LEVEL": "INFO",
         "COOKIES_ENABLED": False,
-        "CONCURRENT_REQUESTS": 3
     }
 
 

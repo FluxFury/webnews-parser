@@ -47,4 +47,16 @@ HTTPCACHE_IGNORE_HTTP_CODES = [500, 502, 503, 504, 429, 400]
 
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 
-FEED_EXPORT_ENCODING = "utf-8"
+FEED_URI = None
+
+FEED_EXPORTERS = {
+    "csv": None,
+    "json": None,
+    "jsonlines": None,
+    "xml": None,
+    "pickle": None,
+    "marshal": None,
+    "jsonl": None,
+}
+
+#FEED_EXPORT_ENCODING = "utf-8"

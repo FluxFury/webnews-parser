@@ -17,7 +17,7 @@ TABLE_COUNT=$(echo "$TABLE_COUNT" | xargs)
 if [ "$TABLE_COUNT" -eq 0 ]; then
   echo "No tables found. Running Alembic migrations..."
   ORIGINAL_DIR=$(pwd)
-  cd /usr/local/lib/python3.13/site-packages/flux_orm/psql_database/
+  cd /usr/local/lib/python3.13/site-packages/flux_orm/
   alembic upgrade head
   cd "$ORIGINAL_DIR"
   echo "Alembic migrations completed."
