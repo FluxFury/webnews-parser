@@ -4,10 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["Jumbik_Tank <oprivetdaent@gmail.com>"]
 readme = "README.md"
-package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.12"
 scrapy = "^2.11.2"
 patchright = "^1.49.1"
 six = "^1.16.0"
@@ -27,7 +26,7 @@ ruff = "^0.6.9"
 faker = "^30.3.0"
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py312"
 task-tags = ["TODO", "FIXME", "NOTE"]
 fix = true
 show-fixes = true

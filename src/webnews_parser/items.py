@@ -62,6 +62,7 @@ class CSPlayersItem(scrapy.Item):
     player_played_games_overall = scrapy.Field()
     player_status = scrapy.Field()
     team_member_url = scrapy.Field()
+    team_page_link = scrapy.Field()
     image_url = scrapy.Field()
 
 

@@ -39,7 +39,7 @@ class CSPlayersSpider(Spider):
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 0.5,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
-        "LOG_LEVEL": "INFO",
+        "LOG_LEVEL": "DEBUG",
         "COOKIES_ENABLED": False,
         "REACTOR_THREADPOOL_MAXSIZE": 20
     }
@@ -92,12 +92,14 @@ class CSPlayersSpider(Spider):
             Request: Requests for individual player pages.
         """
         players = response.xpath('//div[contains(@class,"hblock")]/h2[contains(text(),"Roster")]'
-                                         '/parent::*/parent::*/table/tbody/tr/td/a')
+                                         '/parent::*/parent::*/table/tbody/tr/td')
         
-        for player_link in players.xpath(".//@href"):
-            player_status = self._get_player_status(player_link.xpath(".//span/u/text()").get())
-            full_url = urljoin(self.base_url, player_link.get())
-            yield Request(url=full_url, callback=self.parse_player, meta={"delay": 10}, cb_kwargs={"player_status": player_status})
+        for player in players.xpath(".//a"):
+            player_status = self._get_player_status(player.xpath(".//span/u/text()").get())
+            full_url = urljoin(self.base_url, player.xpath(".//@href").get())
+            yield Request(url=full_url, callback=self.parse_player, meta={"delay": 10}, cb_kwargs={"player_status": player_status,
+                                                                                                   "player_team": response.url.split("/")[-1],
+                                                                                                   "team_page_link": response.url})
 
     def parse_player(self, response: Response, **kwargs: Any) -> Iterator[CSPlayersItem]:
         """
@@ -110,20 +112,39 @@ class CSPlayersSpider(Spider):
         Yields:
             CSPlayersItem: Processed player data item.
         """
+        retry_times = response.meta.get("retry_times", 0)
+        max_retries = 3
+        
+        player_nickname = css_mutator("div.col-lg-8 h1::text", response)
+        
+        if not player_nickname and retry_times < max_retries:
+            yield Request(
+                url=response.url,
+                callback=self.parse_player,
+                meta={
+                    "delay": 10,
+                    "retry_times": retry_times + 1
+                },
+                cb_kwargs=kwargs,
+                dont_filter=True
+            )
+            return
+
         table_selector = response.css("table.tinfo.table.table-sm tbody")
         
-        # Determine if the table structure is standard or alternative
         is_standard_layout = css_mutator(
             "tr:nth-child(1) th::text", 
             table_selector
         ).strip() == "Top places"
 
-        # Extract player data using the appropriate selectors
         player_data = self._extract_player_data(response, table_selector, is_standard_layout)
         
         loader = CSPlayersItemLoader(item=CSPlayersItem())
         for field, value in player_data.items():
             loader.add_value(field, value)
+        
+        loader.add_value("player_team", kwargs.get("player_team"))
+        loader.add_value("team_page_link", kwargs.get("team_page_link"))
         item = loader.load_item()   
         yield item
 
@@ -144,7 +165,6 @@ class CSPlayersSpider(Spider):
         Returns:
             dict: Dictionary containing player data.
         """
-        # Select appropriate row indices based on layout
         indices = {
             "team": 5 if is_standard_layout else 4,
             "country": 4 if is_standard_layout else 3,
@@ -152,7 +172,6 @@ class CSPlayersSpider(Spider):
             "games": 7 if is_standard_layout else 6
         }
 
-        # Extract data using the determined indices
         team_selector = css_mutator(
             f"tr:nth-child({indices['team']}) td a::attr(href)", 
             table_selector
@@ -183,7 +202,6 @@ class CSPlayersSpider(Spider):
                 "div.col-lg-8 h1 small::text", 
                 response
             ).strip(),
-            "player_team": team_selector.split("/")[-1].strip(),
             "player_age": age_selector.strip().split(" ")[0],
             "player_country": country_selector.strip(),
             "player_played_games_last_year": games_selector_1.split("/")[0].strip(),

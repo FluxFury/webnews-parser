@@ -293,25 +293,23 @@ class CSTeamsPostgresPipeline:
         await self._commit_team_data(item)
         return item
 
-
-
     @staticmethod
     async def _commit_team_data(item: dict[str, Any]) -> None:
         """Store or update team data."""
         async with new_session(expire_on_commit=True, autoflush=False) as session:
-            team = await session.scalar(select(Team).options(joinedload(Team.members)).filter_by(name=item["team_name"]))
-
+            team_page_link = item.get("team_page_link")
+            team = await session.scalar(select(Team).options(joinedload(Team.members)).filter_by(team_url=team_page_link))
             if not team:
                 team = Team()
                 update_object(
                     team,
                     {
-                        "name": item["team_name"],
-                        "pretty_name": item["team_pretty_name"],
-                        "regalia": item["regalia"],
-                        "stats": item["stats"],
-                        "image_url": item["team_page_link"],
-                        "team_url": item["team_page_link"],
+                        "name": item.get("team_name"),
+                        "pretty_name": item.get("team_pretty_name"),
+                        "regalia": item.get("regalia"),
+                        "stats": item.get("stats"),
+                        "image_url": item.get("team_logo_link"),
+                        "team_url": team_page_link,
                     },
                 )
                 session.add(team)
@@ -319,10 +317,10 @@ class CSTeamsPostgresPipeline:
                 update_object(
                     team,
                     {
-                        "pretty_name": item["team_pretty_name"],
-                        "regalia": item["regalia"],
-                        "stats": item["stats"],
-                        "team_url": item["team_page_link"],
+                        "pretty_name": item.get("team_pretty_name"),
+                        "regalia": item.get("regalia"),
+                        "stats": item.get("stats"),
+                        "team_url": team_page_link,
                     },
                 )
 
@@ -335,8 +333,9 @@ class CSTeamsPostgresPipeline:
         players_data = item.get("players", {})
 
         for nickname, player_data in players_data.items():
+            team_member_url = item.get("players").get(nickname)[1]
             member = await session.scalar(
-                select(TeamMember).filter_by(nickname=nickname)
+                select(TeamMember).filter_by(team_member_url=team_member_url)
             )
 
             if not member:
@@ -348,12 +347,14 @@ class CSTeamsPostgresPipeline:
                         "country": player_data[2],  # Index 2 contains country
                         "stats": {"status": player_data[0]},  # Index 0 contains status
                         "image_url": player_data[3],  # Index 3 contains image URL
+                        "team_member_url": team_member_url,
                     }
                 )
-                team.members.append(member)
             else:
                 member.stats["status"] = player_data[0]
                 member.image_url = player_data[3]
+            if not member in team.members:
+                team.members.append(member)
 
 
 class CSPlayersPipeline:
@@ -373,12 +374,15 @@ class CSPlayersPipeline:
         """
         async with new_session() as session:
             # Check if player exists by nickname
-            stmt = select(TeamMember).filter_by(nickname=item.get("team_member_url"))
+            stmt = select(TeamMember).filter_by(team_member_url=item.get("team_member_url"))
+            print(item.get("team_member_url"))
             result = await session.execute(stmt)
             player = result.scalar_one_or_none()
 
             if not player:
                 player = TeamMember()
+
+            
 
             update_object(
                 player,
@@ -401,14 +405,13 @@ class CSPlayersPipeline:
                 "status": item.get("player_status"),
             })
 
-            # If team name is provided, link player to team
-            if item.get("player_team"):
-                team_stmt = select(Team).options(joinedload(Team.members)).filter_by(name=item.get("player_team"))
-                result = await session.execute(team_stmt)
-                team = result.unique().scalar_one_or_none()
-                
-                if team and player not in team.members:
-                    team.members.append(player)
+
+            team_stmt = select(Team).options(joinedload(Team.members)).filter_by(team_url=item.get("team_page_link"))
+            result = await session.execute(team_stmt)
+            team = result.unique().scalar_one_or_none()
+            
+            if team and player not in team.members:
+                team.members.append(player)
 
             if not player in session:
                 session.add(player)

@@ -46,6 +46,27 @@ class CSUpdateTournamentsSpider(Spider):
 
     def parse_tournament(self, response, match_id):
         """Parse tournament details and yield data for updating."""
+        retry_times = response.meta.get("retry_times", 0)
+        max_retries = 3  # Maximum number of retry attempts
+        
+        # Check if tournament name exists
+        tournament_name = response.css("div.hh h1::text").get()
+        
+        if not tournament_name and retry_times < max_retries:
+            # If tournament name is missing and we haven't exceeded max retries,
+            # schedule another request
+            yield Request(
+                url=response.url,
+                callback=self.parse_tournament,
+                meta={
+                    "delay": 4,
+                    "retry_times": retry_times + 1
+                },
+                cb_kwargs={"match_id": match_id},
+                dont_filter=True
+            )
+            return
+
         loader = CSUpdateTournamentsLoader(
             item=CSUpdateTournamentsItem(),
             response=response

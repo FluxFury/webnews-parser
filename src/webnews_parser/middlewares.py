@@ -66,7 +66,7 @@ async def start_playwright(
         java_script_enabled=enable_js,
         no_viewport=True,
     )
-    context.set_default_timeout(100000)
+    context.set_default_timeout(120000)
     page = await context.new_page()
     return p, browser, context, page
 
@@ -171,8 +171,8 @@ class PatchrightMiddleware:
             await asyncio.sleep(request.meta.get("delay", 0))
             return await page.content()
         except _errors.TimeoutError as e:
-            spider.logger.error(f"Timeout error: {e}")
-            return None
+            spider.logger.error(f"Timeout error {e}, retrying...")
+            return request
         finally:
             await shutdown_playwright(p, browser, context)
 

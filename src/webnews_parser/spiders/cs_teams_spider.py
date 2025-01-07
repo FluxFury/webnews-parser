@@ -39,7 +39,7 @@ class CSTeamsSpider(Spider):
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 1.0,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
-        "LOG_LEVEL": "INFO",
+        "LOG_LEVEL": "DEBUG",
         "COOKIES_ENABLED": False,
         "CONCURRENT_REQUESTS": 4,
     }
@@ -87,9 +87,7 @@ class CSTeamsSpider(Spider):
         """Parse individual team pages and extract team data."""
         if not self.is_team_links_fetched:
             teams = await self.get_cs2_teams()
-            team_links = []
-            for team in teams:
-                team_links.append(team.team_url)
+            team_links = [team.team_url for team in teams]
             self.is_team_links_fetched = True
             for team_link in team_links:
                 yield Request(url=team_link, callback=self.parse)
