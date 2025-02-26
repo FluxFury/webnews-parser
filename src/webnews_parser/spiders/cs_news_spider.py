@@ -31,7 +31,6 @@ class CSNewsSpider(Spider):
             "scrapy_user_agents.middlewares.RandomUserAgentMiddleware": None,
             "webnews_parser.middlewares.FilterCSNewsURLMiddleware": 1,
             "webnews_parser.middlewares.PatchrightMiddleware": 542,
-            "webnews_parser.middlewares.TooManyRequestsRetryMiddleware": 543,
             "scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware": 810,
         },
         "ITEM_PIPELINES": {
@@ -43,7 +42,6 @@ class CSNewsSpider(Spider):
         "DOWNLOAD_TIMEOUT": 120,
         "DB_URL": os.getenv("DB_URL"),
         "HTTPCACHE_ENABLED": True,
-        "CONCURRENT_REQUESTS": 8,
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

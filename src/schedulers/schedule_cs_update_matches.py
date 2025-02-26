@@ -1,16 +1,6 @@
-import pathlib
+from webnews_parser.scheduler import load_environment, schedule_update_matches_spider
 
-from dotenv import load_dotenv
-
-path_to_env = pathlib.Path(__file__).resolve().parent.parent
-load_dotenv(dotenv_path=path_to_env / ".env.local", override=True)
-
-from webnews_parser.__main__ import scrapyd, settings
-
-job_id = scrapyd.schedule(
-    "webnews_parser",
-    "CSUpdateLiveScheduledMatchesSpider",
-    setting=settings,
-)
-
-print(job_id)
+if __name__ == "__main__":
+    load_environment()
+    job_id = schedule_update_matches_spider()
+    print(job_id)

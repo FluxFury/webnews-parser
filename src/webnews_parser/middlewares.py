@@ -155,15 +155,16 @@ class TooManyRequestsRetryMiddleware(RetryMiddleware):
 class PatchrightMiddleware:
     async def _fetch(self, request, spider):
         """Fetch content using Playwright with stealth settings."""
-        p, browser, context, page = await start_playwright(
-            spider,
-            headless=True,
-            channel="chromium",
-            enable_js=True,
-            wait_for_storage_state=False,
-        )
-
+        p = browser = context = None
         try:
+            p, browser, context, page = await start_playwright(
+                spider,
+                headless=True,
+                channel="chromium",
+                enable_js=True,
+                wait_for_storage_state=False,
+            )
+
             if request.meta.get("no_wait_until_networkidle"):
                 await page.goto(request.url, wait_until="domcontentloaded")
             else:
@@ -174,7 +175,8 @@ class PatchrightMiddleware:
             spider.logger.error(f"Timeout error {e}, retrying...")
             return request
         finally:
-            await shutdown_playwright(p, browser, context)
+            if all((p, browser, context)):
+                await shutdown_playwright(p, browser, context)
 
     async def process_request(self, request, spider):
         content = await self._fetch(request, spider)

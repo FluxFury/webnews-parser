@@ -18,6 +18,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+import scrapy
 
 from .utils.db_utils import poll_sport_by_name, update_object
 
@@ -40,7 +41,7 @@ async def upsert_match(item: dict[str, Any], session: AsyncSession) -> Match:
     )
     await session.execute(stmt)
 
-    select_stmt = select(Match).filter_by(external_id=item["external_id"])
+    select_stmt = select(Match).options(joinedload(Match.match_status)).filter_by(external_id=item["external_id"])
     result = await session.execute(select_stmt)
 
     return result.scalar_one()
@@ -74,7 +75,7 @@ async def get_or_create_team(
 class CSCreateLiveScheduledMatchesPipeline:
     """Pipeline for creating new matches with empty tournament placeholders."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Process match items and create new database entries.
 
@@ -89,11 +90,13 @@ class CSCreateLiveScheduledMatchesPipeline:
         async with new_session(expire_on_commit=True, autoflush=False) as session:
             match = await upsert_match(item, session)
 
-            match_status = MatchStatus()
-            match_status.name = item["match_status"]
-            match.match_status = match_status
+            if not match.match_status:
+                match_status = MatchStatus()
+                match_status.name = item["match_status"]
+                match.match_status = match_status
+            else:
+                match.match_status.name = item["match_status"]
 
-            session.add(match)
             try:
                 await session.commit()
             except IntegrityError as e:
@@ -106,7 +109,7 @@ class CSCreateLiveScheduledMatchesPipeline:
 class CSUpdateLiveScheduledMatchesPipeline:
     """Pipeline for updating match information and status."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """Update match details and status."""
         async with new_session(expire_on_commit=True, autoflush=False) as session:
             stmt = (
@@ -180,7 +183,7 @@ class CSUpdateLiveScheduledMatchesPipeline:
 class CSUpdateTournamentsPipeline:
     """Pipeline for updating tournament information for existing matches."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Update tournament information for a match.
 
@@ -246,7 +249,7 @@ class CSUpdateTournamentsPipeline:
 class CSNewsPostgresPipeline:
     """Pipeline for processing and storing news articles."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Store news articles in the database.
 
@@ -279,7 +282,7 @@ class CSNewsPostgresPipeline:
 class CSTeamsPostgresPipeline:
     """Pipeline for processing and storing team information."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Store team information in the database.
 
@@ -360,7 +363,7 @@ class CSTeamsPostgresPipeline:
 class CSPlayersPipeline:
     """Pipeline for processing and storing player information."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Store player information in the database.
 
@@ -428,7 +431,7 @@ class CSPlayersPipeline:
 class CSPastMatchesPostgresPipeline:
     """Pipeline for processing and storing past matches information."""
 
-    async def process_item(self, item: dict[str, Any], spider: Any) -> dict[str, Any]:
+    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
         """
         Store past match information in the database.
 

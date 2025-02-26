@@ -1,0 +1,7 @@
+# Ignore Python virtual environments
+.venv
+venv
+# Ignore Git metadata
+.git
+# Ignore OS-specific files
+.DS_Store

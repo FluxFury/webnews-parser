@@ -67,3 +67,8 @@ def schedule_create_matches_spider() -> str:
 def schedule_update_tournaments_spider() -> str:
     """Schedule the CS Update Tournaments spider."""
     return schedule_spider("CSUpdateTournamentsSpider")
+
+
+def schedule_update_matches_spider() -> str:
+    """Schedule the CS Update Matches spider."""
+    return schedule_spider("CSUpdateLiveScheduledMatchesSpider")
