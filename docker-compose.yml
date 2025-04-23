@@ -17,20 +17,7 @@ services:
       - db
     networks:
         - app_network
-  db:
-    image: postgres:17
-    container_name: ff-db
-    env_file:
-      - .env
-    ports:
-      - "5433:5432"
-    restart: unless-stopped
-
-    networks:
-        - app_network
-
-volumes:
-  postgres-data:
+ 
 
 networks:
   app_network:

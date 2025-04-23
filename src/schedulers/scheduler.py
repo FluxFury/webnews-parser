@@ -1,3 +1,7 @@
+
+from main import scrapyd
+
+
 import pathlib
 
 from dotenv import load_dotenv
@@ -15,6 +19,7 @@ def load_environment(env_file: str = ".env.local") -> None:
     """
     path_to_env = pathlib.Path(__file__).resolve().parent.parent.parent
     load_dotenv(dotenv_path=path_to_env / env_file, override=True)
+
 
 
 def schedule_spider(spider_name: str, project_name: str = "webnews_parser", **kwargs) -> str:
@@ -37,6 +42,8 @@ def schedule_spider(spider_name: str, project_name: str = "webnews_parser", **kw
         **kwargs
     )
     return job_id
+
+
 
 
 def schedule_news_spider() -> str:
@@ -72,3 +79,4 @@ def schedule_update_tournaments_spider() -> str:
 def schedule_update_matches_spider() -> str:
     """Schedule the CS Update Matches spider."""
     return schedule_spider("CSUpdateLiveScheduledMatchesSpider")
+

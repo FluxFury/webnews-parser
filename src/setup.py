@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name         = "project",
+    name         = "webnews_parser",
     version      = "1.0",
     packages     = find_packages(),
     entry_points = {"scrapy": ["settings = webnews_parser.settings"]},

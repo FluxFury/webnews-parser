@@ -1,5 +1,4 @@
 import asyncio
-from random import choice
 
 from flux_orm.database import new_session
 from flux_orm.models.models import RawNews
@@ -173,7 +172,7 @@ class PatchrightMiddleware:
             return await page.content()
         except _errors.TimeoutError as e:
             spider.logger.error(f"Timeout error {e}, retrying...")
-            return request
+            raise IgnoreRequest from e
         finally:
             if all((p, browser, context)):
                 await shutdown_playwright(p, browser, context)

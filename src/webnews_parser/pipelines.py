@@ -13,6 +13,7 @@ from flux_orm.models.models import (
     Team,
     TeamMember,
 )
+from flux_orm.models.enums import PipelineStatus
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
@@ -21,7 +22,7 @@ from sqlalchemy.orm import joinedload
 import scrapy
 
 from .utils.db_utils import poll_sport_by_name, update_object
-
+from flux_orm.models.utils import utcnow_naive
 
 async def upsert_match(item: dict[str, Any], session: AsyncSession) -> Match:
     """Create or update a match."""
@@ -102,7 +103,9 @@ class CSCreateLiveScheduledMatchesPipeline:
             except IntegrityError as e:
                 spider.logger.error(f"IntegrityError: {e}")
                 await session.rollback()
-
+            except Exception as e:
+                spider.logger.error(f"Error: {e}")
+                await session.rollback()
         return item
 
 
@@ -176,7 +179,9 @@ class CSUpdateLiveScheduledMatchesPipeline:
             except IntegrityError as e:
                 spider.logger.error(f"IntegrityError: {e}")
                 await session.rollback()
-
+            except Exception as e:
+                spider.logger.error(f"Error: {e}")
+                await session.rollback()
         return item
 
 
@@ -269,12 +274,17 @@ class CSNewsPostgresPipeline:
                 text=item.get("text"),
                 news_creation_time=item.get("news_creation_time"),
                 sport_id=sport.sport_id,
+                pipeline_status=PipelineStatus.NEW,
+                pipeline_update_time=utcnow_naive(),
             )
             session.add(news)
             try:
                 await session.commit()
             except IntegrityError as e:
                 spider.logger.error(f"IntegrityError: {e}")
+                await session.rollback()
+            except Exception as e:
+                spider.logger.error(f"Error: {e}")
                 await session.rollback()
         return item
 
@@ -424,7 +434,9 @@ class CSPlayersPipeline:
             except IntegrityError as e:
                 spider.logger.error(f"IntegrityError: {e}")
                 await session.rollback()
-
+            except Exception as e:
+                spider.logger.error(f"Error: {e}")
+                await session.rollback()
         return item
 
 
@@ -482,5 +494,7 @@ class CSPastMatchesPostgresPipeline:
             except IntegrityError as e:
                 spider.logger.error(f"IntegrityError: {e}")
                 await session.rollback()
-
+            except Exception as e:
+                spider.logger.error(f"Error: {e}")
+                await session.rollback()
         return item
