@@ -37,20 +37,17 @@ flux-orm = { git = "ssh://git@github.com/FluxFury/flux-orm.git", rev = "main" }
 include = [
     "src/webnews_parser",
     "src/schedulers",
-    "src/task_manager",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = [
     "src/webnews_parser",
     "src/schedulers",
-    "src/task_manager",
 ]
 
 [tool.hatch.build.targets.wheel.sources]
 "src/webnews_parser" = "webnews_parser"
 "src/schedulers" = "schedulers"
-"src/task_manager" = "task_manager"
 
 [build-system]
 requires = ["hatchling"]
