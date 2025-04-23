@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/ 
 
 WORKDIR /workdir
-
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 RUN mkdir -p /root/.ssh && \
     chmod 700 /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts
