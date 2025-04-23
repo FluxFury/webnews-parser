@@ -27,21 +27,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir poetry
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/ 
 
 WORKDIR /workdir
-
-COPY pyproject.toml poetry.lock ./
 
 RUN mkdir -p /root/.ssh && \
     chmod 700 /root/.ssh && \
     ssh-keyscan github.com >> /root/.ssh/known_hosts
 
-COPY ../pyproject.toml ../poetry.lock ./
+COPY ../pyproject.toml ../uv.lock ./
 
-RUN --mount=type=ssh \
-    poetry config virtualenvs.create false && \
-    poetry install --without dev --no-interaction --no-ansi --no-root
+RUN --mount=type=ssh \ 
+    --mount=type=bind,source=uv.lock,target=uv.lock \ 
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \ 
+    uv sync -v --frozen --no-install-project 
+
+
+RUN --mount=type=ssh \ 
+    uv sync --frozen 
+
 
 RUN apt-get purge -y --auto-remove \
     build-essential \
@@ -67,9 +71,9 @@ COPY --from=build-stage /workdir/webnews_parser.egg /var/lib/scrapyd/eggs/webnew
 
 COPY ../pg_db/init-scripts/entrypoint.sh /entrypoint.sh
 
-RUN poetry run patchright install chromium --with-deps
+RUN uv run patchright install chromium --with-deps
 
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
-CMD ["poetry", "run", "scrapyd", "--pidfile="]
+CMD ["uv", "run", "scrapyd", "--pidfile="]

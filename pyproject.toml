@@ -1,42 +1,60 @@
-[tool.poetry]
+[project]
 name = "webnews_parser"
 version = "0.1.0"
 description = ""
-authors = ["Jumbik_Tank <oprivetdaent@gmail.com>"]
+authors = [{ name = "Jumbik_Tank", email = "oprivetdaent@gmail.com" }]
+requires-python = "~=3.12"
+dependencies = [
+    "scrapy>=2.11.2,<3",
+    "patchright>=1.49.1,<2",
+    "six>=1.16.0,<2",
+    "deep-translator>=1.11.4,<2",
+    "scrapy-user-agents>=0.1.1,<0.2",
+    "python-dotenv>=1.0.1,<2",
+    "flux-orm",
+    "scrapyd>=1.5.0,<2",
+    "scrapyd-client>=2.0.0,<3",
+    "asyncpg>=0.30.0,<0.31",
+    "celery>=5.4.0,<6",
+    "redis>=5.2.1,<6",
+    "python-scrapyd-api>=2.1.2,<3",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-scrapy = "^2.11.2"
-patchright = "^1.49.1"
-six = "^1.16.0"
-deep-translator = "^1.11.4"
-scrapy-user-agents = "^0.1.1"
-python-dotenv = "^1.0.1"
-flux-orm = {git = "ssh://git@github.com/FluxFury/flux-orm.git", rev = "main"}
-scrapyd = "^1.5.0"
-scrapyd-client = "^2.0.0"
-asyncpg = "^0.30.0"
-celery = "^5.4.0"
-redis = "^5.2.1"
-python-scrapyd-api = "^2.1.2"
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=0.24.0,<0.25",
+    "python-dotenv>=1.0.1,<2",
+    "ruff>=0.6.9,<0.7",
+    "faker>=30.3.0,<31",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.24.0"
-python-dotenv = "^1.0.1"
-ruff = "^0.6.9"
-faker = "^30.3.0"
+[tool.uv]
 
-[[tool.poetry.packages]]
-include = "webnews_parser"
-from = "src"
+[tool.uv.sources]
+flux-orm = { git = "ssh://git@github.com/FluxFury/flux-orm.git", rev = "main" }
 
-[[tool.poetry.packages]]
-include = "schedulers"
-from = "src"
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/webnews_parser",
+    "src/schedulers",
+    "src/task_manager",
+]
 
-[[tool.poetry.packages]]
-include = "task_manager"
-from = "src"
+[tool.hatch.build.targets.wheel]
+include = [
+    "src/webnews_parser",
+    "src/schedulers",
+    "src/task_manager",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/webnews_parser" = "webnews_parser"
+"src/schedulers" = "schedulers"
+"src/task_manager" = "task_manager"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py312"
@@ -139,11 +157,9 @@ exclude = [     # Exclude a variety of commonly ignored directories.
 ]
 include = ["pyproject.toml"]
 
-
 [tool.ruff.format]
 quote-style = "double"
 exclude = ["*.pyi"]
-
 
 [tool.ruff.lint.isort]
 order-by-type = false
@@ -152,7 +168,3 @@ order-by-type = false
 "*/tests/*" = ["S101", "RUF003"]
 "src/psql_database/models/models.py" = ["RUF003", "RUF001"]
 "*/migrations/*" = ["D103", "D400", "D415"]
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
