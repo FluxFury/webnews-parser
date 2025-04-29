@@ -40,33 +40,26 @@ requires      = ["hatchling>=1.24"]
 build-backend = "hatchling.build"
 
 
-# ────────── Общие настройки ──────────
 [tool.hatch.build]
-sources     = ["src"]   # корень поиска – src/
+sources     = ["webnews_parser"]   # корень поиска – src/
 
-# ────────── W H E E L ──────────
 [tool.hatch.build.targets.wheel]
 # берём ВСЮ webnews_parser и schedulers
-only-include = ["src/webnews_parser", "src/schedulers"]
+only-include = ["webnews_parser", "schedulers"]
 
 # переносим schedulers → webnews_parser/schedulers
 [tool.hatch.build.targets.wheel.sources]
-"schedulers" = "src/webnews_parser/schedulers"
+"schedulers" = "webnews_parser/schedulers"
 
 
-# ────────── S D I S T ──────────
 [tool.hatch.build.targets.sdist]
 only-include = [
-  "src/webnews_parser",
-  "src/schedulers",
-  "pyproject.toml",
-  "README.md",
+  "webnews_parser",
+  "schedulers",
 ]
-
 
 [tool.hatch.build.targets.sdist.sources]
 "schedulers" = "webnews_parser/schedulers"
-
 
 [tool.ruff]
 target-version = "py312"
