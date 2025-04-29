@@ -1,4 +1,7 @@
-from webnews_parser.scheduler import load_environment, schedule_update_matches_spider
+from webnews_parser.schedulers.scheduler import (
+    load_environment,
+    schedule_update_matches_spider,
+)
 
 if __name__ == "__main__":
     load_environment()

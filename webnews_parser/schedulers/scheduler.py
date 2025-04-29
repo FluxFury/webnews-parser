@@ -1,12 +1,11 @@
 
-from main import scrapyd
+from webnews_parser.main import scrapyd
+
 
 
 import pathlib
 
 from dotenv import load_dotenv
-
-from webnews_parser.__main__ import scrapyd, settings
 
 
 def load_environment(env_file: str = ".env.local") -> None:
@@ -38,7 +37,6 @@ def schedule_spider(spider_name: str, project_name: str = "webnews_parser", **kw
     job_id = scrapyd.schedule(
         project_name,
         spider_name,
-        setting=settings,
         **kwargs
     )
     return job_id

@@ -1,4 +1,4 @@
-from webnews_parser.scheduler import (
+from webnews_parser.schedulers.scheduler import (
     load_environment,
     schedule_update_tournaments_spider,
 )
