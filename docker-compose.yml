@@ -2,21 +2,24 @@ services:
   scrapyd:
     build:
       context: .
-      dockerfile: ./src/Dockerfile
+      dockerfile: ./webnews_parser/Dockerfile
       ssh:
         - default
     container_name: scrapyd-ff-server
     ports:
       - "6800:6800"
     volumes:
-      - ./src/scrapyd.conf:/etc/scrapyd/scrapyd.conf
+      - ./webnews_parser/scrapyd.conf:/etc/scrapyd/scrapyd.conf
     env_file:
       - .env
     restart: unless-stopped
     networks:
         - app_network
+        - flux-backend_app_network
  
 
 networks:
   app_network:
     driver: bridge
+  flux-backend_app_network:  # Define the external network
+    external: true

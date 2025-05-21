@@ -41,7 +41,7 @@ build-backend = "hatchling.build"
 
 
 [tool.hatch.build]
-sources     = ["webnews_parser"]   # корень поиска – src/
+sources     = ["webnews_parser"] 
 
 [tool.hatch.build.targets.wheel]
 # берём ВСЮ webnews_parser и schedulers
@@ -171,5 +171,4 @@ order-by-type = false
 
 [tool.ruff.lint.per-file-ignores]
 "*/tests/*" = ["S101", "RUF003"]
-"src/psql_database/models/models.py" = ["RUF003", "RUF001"]
 "*/migrations/*" = ["D103", "D400", "D415"]

@@ -1,24 +1,4 @@
-
 from webnews_parser.main import scrapyd
-
-
-
-import pathlib
-
-from dotenv import load_dotenv
-
-
-def load_environment(env_file: str = ".env.local") -> None:
-    """
-    Load environment variables from the specified file.
-    
-    Args:
-        env_file: Name of the environment file to load.
-        
-    """
-    path_to_env = pathlib.Path(__file__).resolve().parent.parent.parent
-    load_dotenv(dotenv_path=path_to_env / env_file, override=True)
-
 
 
 def schedule_spider(spider_name: str, project_name: str = "webnews_parser", **kwargs) -> str:

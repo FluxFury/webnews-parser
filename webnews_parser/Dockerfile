@@ -5,7 +5,7 @@ RUN pip install --no-cache-dir scrapyd-client
 
 WORKDIR /workdir
 
-COPY src .
+COPY webnews_parser .
 
 RUN scrapyd-deploy --build-egg=webnews_parser.egg
 
@@ -63,7 +63,7 @@ RUN apt-get purge -y --auto-remove \
 
 VOLUME /var/lib/scrapyd/
 
-COPY src/scrapyd.conf /etc/scrapyd/
+COPY webnews_parser/scrapyd.conf /etc/scrapyd/
 
 RUN mkdir -p /var/lib/scrapyd/eggs/webnews_parser
 

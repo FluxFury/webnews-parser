@@ -23,6 +23,7 @@ import scrapy
 
 from .utils.db_utils import poll_sport_by_name, update_object
 from flux_orm.models.utils import utcnow_naive
+from flux_orm.models.enums import MatchStatusEnum
 
 async def upsert_match(item: dict[str, Any], session: AsyncSession) -> Match:
     """Create or update a match."""
@@ -93,11 +94,12 @@ class CSCreateLiveScheduledMatchesPipeline:
 
             if not match.match_status:
                 match_status = MatchStatus()
-                match_status.name = item["match_status"]
+                match_status.name = MatchStatusEnum(item["match_status"])
                 match.match_status = match_status
             else:
-                match.match_status.name = item["match_status"]
-
+                match.match_status.name = MatchStatusEnum(item["match_status"])
+            match.pipeline_status = PipelineStatus.NEW
+            match.pipeline_update_time = utcnow_naive()
             try:
                 await session.commit()
             except IntegrityError as e:
@@ -470,7 +472,7 @@ class CSPastMatchesPostgresPipeline:
                 match.external_id = item.get("external_id")
 
                 match_status = MatchStatus()
-                match_status.name = "finished"
+                match_status.name = MatchStatusEnum.FINISHED
                 match_status.status = {
                     "team1_score": item.get("team1_score"),
                     "team2_score": item.get("team2_score"),
@@ -482,9 +484,8 @@ class CSPastMatchesPostgresPipeline:
 
                 session.add(match)
             else:
-                match.match_status.name = "finished"
+                match.match_status.name = MatchStatusEnum.FINISHED
                 match.match_status.status = {
-                    "name": "finished",
                     "team1_score": item.get("team1_score"),
                     "team2_score": item.get("team2_score"),
                 }
