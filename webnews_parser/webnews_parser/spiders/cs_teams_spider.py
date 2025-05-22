@@ -39,7 +39,7 @@ class CSTeamsSpider(Spider):
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 1.0,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
-        "LOG_LEVEL": "DEBUG",
+        "LOG_LEVEL": "INFO",
         "COOKIES_ENABLED": False,
         "CONCURRENT_REQUESTS": 4,
     }

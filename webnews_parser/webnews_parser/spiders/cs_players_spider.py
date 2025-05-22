@@ -39,7 +39,7 @@ class CSPlayersSpider(Spider):
         "AUTOTHROTTLE_TARGET_CONCURRENCY": 0.5,
         "HTTPCACHE_ENABLED": False,
         "USER_AGENT": None,
-        "LOG_LEVEL": "DEBUG",
+        "LOG_LEVEL": "INFO",
         "COOKIES_ENABLED": False,
         "REACTOR_THREADPOOL_MAXSIZE": 20
     }
