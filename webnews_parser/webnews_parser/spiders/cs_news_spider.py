@@ -6,7 +6,9 @@ from typing import Any, Iterator
 from dotenv import load_dotenv
 from scrapy import Request, Spider
 from scrapy.http import Response
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import calendar
 from webnews_parser.settings import PLAYWRIGHT_ARGS, PLAYWRIGHT_USER_AGENTS
 
 from ..items import CSNewsItem
@@ -23,7 +25,7 @@ class CSNewsSpider(Spider):
 
     name: str = "CSNewsSpider"
     load_dotenv()
-    
+
     custom_settings: dict[str, Any] = {  # noqa: RUF012
         "DOWNLOADER_MIDDLEWARES": {
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
@@ -57,9 +59,20 @@ class CSNewsSpider(Spider):
             Request: Initial requests to start crawling.
 
         """
-        url_array = ["https://www.hltv.org/news/archive/2024/december"]
+        today = datetime.now()
+        months = [
+            today - relativedelta(months=i)
+            for i in range(2)
+        ]
+
+        url_array = [
+            f"https://www.hltv.org/news/archive/{m.year}/{calendar.month_name[m.month].lower()}"
+            for m in months
+        ]
         for url in url_array:
-            yield Request(url=url, callback=self.parse, meta={"no_wait_until_networkidle": True})
+            yield Request(
+                url=url, callback=self.parse, meta={"no_wait_until_networkidle": True}
+            )
 
     def parse(self, response: Response, **kwargs: Any) -> Iterator[Request]:
         """
@@ -81,7 +94,7 @@ class CSNewsSpider(Spider):
                     url=next_url,
                     callback=self.parse_news,
                     cb_kwargs={"rel_url": rel_url},
-                    meta={"no_wait_until_networkidle": True}
+                    meta={"no_wait_until_networkidle": True},
                 )
 
     def parse_news(self, response: Response, **kwargs: Any) -> Iterator[CSNewsItem]:
@@ -117,7 +130,7 @@ class CSNewsSpider(Spider):
         loader.add_value(
             "news_creation_time",
             response.xpath('//div[@class="date"]/@data-unix').get()
-            or response.xpath('//div[@class="news-with-frag-date"]/@data-unix').get()
+            or response.xpath('//div[@class="news-with-frag-date"]/@data-unix').get(),
         )
 
         if paragraph_list:
