@@ -160,7 +160,6 @@ exclude = [     # Exclude a variety of commonly ignored directories.
     "./.venv",
     "**/.venv/**"
 ]
-include = ["pyproject.toml"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -60,10 +60,7 @@ class CSNewsSpider(Spider):
 
         """
         today = datetime.now()
-        months = [
-            today - relativedelta(months=i)
-            for i in range(2)
-        ]
+        months = [today - relativedelta(months=i) for i in range(2)]
 
         url_array = [
             f"https://www.hltv.org/news/archive/{m.year}/{calendar.month_name[m.month].lower()}"

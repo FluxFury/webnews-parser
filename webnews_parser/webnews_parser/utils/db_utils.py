@@ -18,7 +18,11 @@ def update_object(obj, data: dict):
 
     """
     mapper = class_mapper(obj.__class__)
-    relationship_keys = {prop.key for prop in mapper.iterate_properties if isinstance(prop, RelationshipProperty)}
+    relationship_keys = {
+        prop.key
+        for prop in mapper.iterate_properties
+        if isinstance(prop, RelationshipProperty)
+    }
 
     for key, value in data.items():
         if key in relationship_keys:
@@ -30,11 +34,7 @@ def update_object(obj, data: dict):
 async def poll_latest_match() -> Match:
     """Get the most recently added match from the database asynchronously."""
     async with new_session() as session:
-        stmt = (
-            select(Match)
-            .order_by(desc(Match.created_at))
-            .limit(1)
-        )
+        stmt = select(Match).order_by(desc(Match.created_at)).limit(1)
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -42,14 +42,11 @@ async def poll_latest_match() -> Match:
 def sync_poll_latest_match() -> Match:
     """Get the most recently added match from the database synchronously."""
     with new_sync_session() as session:
-        stmt = (
-            select(Match)
-            .order_by(desc(Match.planned_start_datetime))
-            .limit(1)
-        )
+        stmt = select(Match).order_by(desc(Match.planned_start_datetime)).limit(1)
         result = session.execute(stmt)
         return result.scalar_one_or_none()
-    
+
+
 async def poll_sport_by_name(name: str) -> Sport:
     """Get a sport by its name."""
     async with new_session() as session:
@@ -65,10 +62,7 @@ def poll_cs2_matches() -> list[Match]:
             select(Match)
             .join(Match.sport)
             .join(Match.match_status)
-            .filter(
-                Sport.name == "CS2",
-                MatchStatus.name.in_(["scheduled", "live"])
-            )
+            .filter(Sport.name == "CS2", MatchStatus.name.in_(["scheduled", "live"]))
             .distinct()
         )
         result = session.execute(stmt)
@@ -78,7 +72,6 @@ def poll_cs2_matches() -> list[Match]:
 def get_matches_with_empty_tournaments() -> list[Match]:
     """Get matches with empty tournaments."""
     with new_sync_session() as session:
-        stmt = select(Match).filter_by(competition_id = None)
+        stmt = select(Match).filter_by(competition_id=None)
         matches = session.execute(stmt)
         return matches.scalars().all()
-            

@@ -41,7 +41,6 @@ class CSCreateLiveScheduledMatchesSpider(scrapy.Spider):
         self.browser_args = PLAYWRIGHT_ARGS
         self.user_agent = random.choice(PLAYWRIGHT_USER_AGENTS)
 
-
     def start_requests(self):
         self.last_match = sync_poll_latest_match()
         last_page_num = 3
@@ -54,12 +53,10 @@ class CSCreateLiveScheduledMatchesSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse, meta={"page_num": page_num})
             page_num -= 1
 
-
-
     async def parse(self, response: scrapy.http.TextResponse) -> AsyncGenerator[Any]:
         table = response.css("div#matches_s1.flex-table")
         matches = table.css("a.article.type1") + table.css("a.article")
-        
+
         for match_element in matches:
             match_url = match_element.css("::attr(href)").get()
             full_match_url = urljoin(base="https://escorenews.com", url=match_url)
@@ -68,30 +65,28 @@ class CSCreateLiveScheduledMatchesSpider(scrapy.Spider):
             team_names = extract_teams(full_match_url)
             match_name = " vs ".join([team.strip() for team in team_names])
             match_status = self._get_match_status(match_element)
-                
+
             if match_url and match_url.count("tbd") < 2:
                 loader = CSCreateLiveScheduledMatchesLoader(
                     item=CSCreateLiveScheduledMatchesItem(),
                     selector=match_element,
-                    response=response
+                    response=response,
                 )
-                
+
                 loader.add_value("match_url", full_match_url)
                 loader.add_css(
-                    "planned_start_datetime",
-                    "div.time i.sct::attr(datetime)"
+                    "planned_start_datetime", "div.time i.sct::attr(datetime)"
                 )
-                loader.add_value(
-                    "match_name",
-                    match_name
-                )
+                loader.add_value("match_name", match_name)
                 loader.add_value("external_id", external_id)
                 loader.add_value("match_status", match_status)
                 yield loader.load_item()
 
     def _get_match_status(self, response):
         status = response.xpath('//a[contains(@class, "article type1")]').get()
-        status_alt = response.xpath('//a[contains(@class, "article v_gl704 type1")]').get()
+        status_alt = response.xpath(
+            '//a[contains(@class, "article v_gl704 type1")]'
+        ).get()
         if status or status_alt:
             return "live"
         return "scheduled"

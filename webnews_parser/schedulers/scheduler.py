@@ -1,27 +1,23 @@
 from webnews_parser.main import scrapyd
 
 
-def schedule_spider(spider_name: str, project_name: str = "webnews_parser", **kwargs) -> str:
+def schedule_spider(
+    spider_name: str, project_name: str = "webnews_parser", **kwargs
+) -> str:
     """
     Schedule a spider to run.
-    
+
     Args:
         spider_name: Name of the spider to schedule.
         project_name: Name of the project (default: "webnews_parser").
         **kwargs: Additional keyword arguments to pass to the spider.
-    
+
     Returns:
         str: Job ID of the scheduled spider.
 
     """
-    job_id = scrapyd.schedule(
-        project_name,
-        spider_name,
-        **kwargs
-    )
+    job_id = scrapyd.schedule(project_name, spider_name, **kwargs)
     return job_id
-
-
 
 
 def schedule_news_spider() -> str:
@@ -57,4 +53,3 @@ def schedule_update_tournaments_spider() -> str:
 def schedule_update_matches_spider() -> str:
     """Schedule the CS Update Matches spider."""
     return schedule_spider("CSUpdateLiveScheduledMatchesSpider")
-

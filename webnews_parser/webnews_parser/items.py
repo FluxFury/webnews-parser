@@ -93,4 +93,3 @@ class CSUpdateTournamentsItem(Item):
     tournament_description = Field()
     tournament_start_date = Field()
     tournament_prize_pool = Field()
-

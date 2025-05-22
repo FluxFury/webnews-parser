@@ -62,7 +62,7 @@ def clean_text(text: str | None) -> str:
     """
     if not text:
         return ""
-        
+
     cleaned = (
         unescape(text)
         .replace("\u2060", "")
@@ -77,7 +77,7 @@ def clean_text(text: str | None) -> str:
 
 
 def extract_teams(url):
-    pattern = r'/([^/-]+(?:-[^/-]+)*)-vs-([^/-]+(?:-[^/-]+)*)-\d+$'
+    pattern = r"/([^/-]+(?:-[^/-]+)*)-vs-([^/-]+(?:-[^/-]+)*)-\d+$"
     match = re.search(pattern, url)
     if match:
         team1 = match.group(1)
@@ -85,5 +85,3 @@ def extract_teams(url):
         return team1, team2
     else:
         return None, None
-
-

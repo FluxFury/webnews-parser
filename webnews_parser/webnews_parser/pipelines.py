@@ -25,25 +25,32 @@ from .utils.db_utils import poll_sport_by_name, update_object
 from flux_orm.models.utils import utcnow_naive
 from flux_orm.models.enums import MatchStatusEnum
 
+
 async def upsert_match(item: dict[str, Any], session: AsyncSession) -> Match:
     """Create or update a match."""
     # Create a copy of the item and remove status since it's not a Match field
     match_data = item.copy()
     match_data.pop("match_status", None)
-    
+
     sport = await poll_sport_by_name("CS2")
     stmt = (
-        insert(Match).values(**match_data, sport_id=sport.sport_id).on_conflict_do_update(
+        insert(Match)
+        .values(**match_data, sport_id=sport.sport_id)
+        .on_conflict_do_update(
             index_elements=["external_id"],
             set_={
                 "match_name": match_data["match_name"],
-                "planned_start_datetime": match_data["planned_start_datetime"]
-            }
+                "planned_start_datetime": match_data["planned_start_datetime"],
+            },
         )
     )
     await session.execute(stmt)
 
-    select_stmt = select(Match).options(joinedload(Match.match_status)).filter_by(external_id=item["external_id"])
+    select_stmt = (
+        select(Match)
+        .options(joinedload(Match.match_status))
+        .filter_by(external_id=item["external_id"])
+    )
     result = await session.execute(select_stmt)
 
     return result.scalar_one()
@@ -77,7 +84,9 @@ async def get_or_create_team(
 class CSCreateLiveScheduledMatchesPipeline:
     """Pipeline for creating new matches with empty tournament placeholders."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Process match items and create new database entries.
 
@@ -114,7 +123,9 @@ class CSCreateLiveScheduledMatchesPipeline:
 class CSUpdateLiveScheduledMatchesPipeline:
     """Pipeline for updating match information and status."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """Update match details and status."""
         async with new_session(expire_on_commit=True, autoflush=False) as session:
             stmt = (
@@ -190,7 +201,9 @@ class CSUpdateLiveScheduledMatchesPipeline:
 class CSUpdateTournamentsPipeline:
     """Pipeline for updating tournament information for existing matches."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Update tournament information for a match.
 
@@ -256,7 +269,9 @@ class CSUpdateTournamentsPipeline:
 class CSNewsPostgresPipeline:
     """Pipeline for processing and storing news articles."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Store news articles in the database.
 
@@ -266,7 +281,7 @@ class CSNewsPostgresPipeline:
 
         Returns:
             dict: The processed item.
-            
+
         """
         async with new_session() as session:
             sport = await poll_sport_by_name("CS2")
@@ -294,7 +309,9 @@ class CSNewsPostgresPipeline:
 class CSTeamsPostgresPipeline:
     """Pipeline for processing and storing team information."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Store team information in the database.
 
@@ -313,7 +330,11 @@ class CSTeamsPostgresPipeline:
         """Store or update team data."""
         async with new_session(expire_on_commit=True, autoflush=False) as session:
             team_page_link = item.get("team_page_link")
-            team = await session.scalar(select(Team).options(joinedload(Team.members)).filter_by(team_url=team_page_link))
+            team = await session.scalar(
+                select(Team)
+                .options(joinedload(Team.members))
+                .filter_by(team_url=team_page_link)
+            )
             if not team:
                 team = Team()
                 update_object(
@@ -343,7 +364,9 @@ class CSTeamsPostgresPipeline:
             await session.commit()
 
     @staticmethod
-    async def _update_team_members(team: Team, item: dict[str, Any], session: AsyncSession) -> None:
+    async def _update_team_members(
+        team: Team, item: dict[str, Any], session: AsyncSession
+    ) -> None:
         """Update team members information."""
         players_data = item.get("players", {})
 
@@ -363,7 +386,7 @@ class CSTeamsPostgresPipeline:
                         "stats": {"status": player_data[0]},  # Index 0 contains status
                         "image_url": player_data[3],  # Index 3 contains image URL
                         "team_member_url": team_member_url,
-                    }
+                    },
                 )
             else:
                 member.stats["status"] = player_data[0]
@@ -375,7 +398,9 @@ class CSTeamsPostgresPipeline:
 class CSPlayersPipeline:
     """Pipeline for processing and storing player information."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Store player information in the database.
 
@@ -389,7 +414,9 @@ class CSPlayersPipeline:
         """
         async with new_session() as session:
             # Check if player exists by nickname
-            stmt = select(TeamMember).filter_by(team_member_url=item.get("team_member_url"))
+            stmt = select(TeamMember).filter_by(
+                team_member_url=item.get("team_member_url")
+            )
             print(item.get("team_member_url"))
             result = await session.execute(stmt)
             player = result.scalar_one_or_none()
@@ -397,40 +424,43 @@ class CSPlayersPipeline:
             if not player:
                 player = TeamMember()
 
-            
-
             update_object(
                 player,
                 {
                     "nickname": item.get("player_nickname"),
                     "name": item.get("player_name"),
-                    "age": int(item.get("player_age")) if item.get("player_age") is not None else None,
+                    "age": int(item.get("player_age"))
+                    if item.get("player_age") is not None
+                    else None,
                     "country": item.get("player_country"),
                     "team_member_url": item.get("team_member_url"),
                     "image_url": item.get("image_url"),
                 },
             )
-            
+
             if not player.stats:
                 player.stats = {}
-                
+
             player.stats.update({
                 "games_last_year": item.get("player_played_games_last_year"),
                 "games_overall": item.get("player_played_games_overall"),
                 "status": item.get("player_status"),
             })
 
-
-            team_stmt = select(Team).options(joinedload(Team.members)).filter_by(team_url=item.get("team_page_link"))
+            team_stmt = (
+                select(Team)
+                .options(joinedload(Team.members))
+                .filter_by(team_url=item.get("team_page_link"))
+            )
             result = await session.execute(team_stmt)
             team = result.unique().scalar_one_or_none()
-            
+
             if team and player not in team.members:
                 team.members.append(player)
 
             if not player in session:
                 session.add(player)
-            
+
             try:
                 await session.commit()
             except IntegrityError as e:
@@ -445,7 +475,9 @@ class CSPlayersPipeline:
 class CSPastMatchesPostgresPipeline:
     """Pipeline for processing and storing past matches information."""
 
-    async def process_item(self, item: dict[str, Any], spider: scrapy.Spider) -> dict[str, Any]:
+    async def process_item(
+        self, item: dict[str, Any], spider: scrapy.Spider
+    ) -> dict[str, Any]:
         """
         Store past match information in the database.
 
@@ -458,10 +490,13 @@ class CSPastMatchesPostgresPipeline:
 
         """
         async with new_session() as session:
-
             sport = await poll_sport_by_name("CS2")
 
-            stmt = select(Match).options(joinedload(Match.match_status)).filter_by(external_id=item.get("external_id"))
+            stmt = (
+                select(Match)
+                .options(joinedload(Match.match_status))
+                .filter_by(external_id=item.get("external_id"))
+            )
             result = await session.execute(stmt)
             match = result.scalar_one_or_none()
 
@@ -478,7 +513,7 @@ class CSPastMatchesPostgresPipeline:
                     "team2_score": item.get("team2_score"),
                 }
                 match.match_status = match_status
-                
+
                 # Set match dates - date is already parsed by the loader
                 match.planned_start_datetime = item.get("date")
 

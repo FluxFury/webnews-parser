@@ -26,7 +26,7 @@ class CSpMatchesSpider(Spider):
     """
 
     name: str = "CSpMatchesSpider"
-    
+
     custom_settings: dict[str, Any] = {
         "DOWNLOADER_MIDDLEWARES": {
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
@@ -44,7 +44,7 @@ class CSpMatchesSpider(Spider):
         "USER_AGENT": None,
         "LOG_LEVEL": "INFO",
         "COOKIES_ENABLED": False,
-        "REACTOR_THREADPOOL_MAXSIZE": 20
+        "REACTOR_THREADPOOL_MAXSIZE": 20,
     }
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -80,11 +80,11 @@ class CSpMatchesSpider(Spider):
         """
         for match in response.css("div#matches_s2.flex-table a.article.v_gl704"):
             match_data = self._extract_match_data(match)
-            
+
             loader = CSPMatchesItemLoader(item=CSPMatchesItem())
             for field, value in match_data.items():
                 loader.add_value(field, value)
-                
+
             yield loader.load_item()
 
     def _extract_match_data(self, match: Response) -> dict[str, str]:
@@ -96,10 +96,12 @@ class CSpMatchesSpider(Spider):
 
         Returns:
             dict: Dictionary containing match data.
-            
+
         """
         score = css_mutator("div.teams div.score span.type0::text", match).split(":")
-        full_match_url = urljoin(base=self.base_url, url=match.css("::attr(href)").get())
+        full_match_url = urljoin(
+            base=self.base_url, url=match.css("::attr(href)").get()
+        )
         team_names = extract_teams(full_match_url)
         match_name = " vs ".join([team.strip() for team in team_names])
         return {
@@ -110,5 +112,4 @@ class CSpMatchesSpider(Spider):
             "team1_score": score[0].strip(),
             "team2_score": score[1].strip(),
             "team2": match.css("div.teams span:nth-child(3) b::text").get(),
-            
         }

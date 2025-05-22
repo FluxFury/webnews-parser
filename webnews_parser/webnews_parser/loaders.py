@@ -23,14 +23,16 @@ def process_age(value: str) -> str | None:
 def parse_unix_timestamp(timestamp_str: str) -> datetime:
     """Convert unix timestamp string to datetime object."""
     try:
-        return datetime.fromtimestamp(int(timestamp_str) / 1000)  # Convert milliseconds to seconds
+        return datetime.fromtimestamp(
+            int(timestamp_str) / 1000
+        )  # Convert milliseconds to seconds
     except (ValueError, TypeError):
         return None
 
 
 class CSCreateLiveScheduledMatchesLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     planned_start_datetime_in = MapCompose(parse_datetime)
     match_name_in = MapCompose(str.strip)
     match_url_in = MapCompose(str.strip)
@@ -39,7 +41,7 @@ class CSCreateLiveScheduledMatchesLoader(ItemLoader):
 
 class CSUpdateTournamentsLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     tournament_name_in = MapCompose(str.strip)
     tournament_location_in = MapCompose(str.strip)
     tournament_logo_link_in = MapCompose(str.strip)
@@ -50,7 +52,7 @@ class CSUpdateTournamentsLoader(ItemLoader):
 
 class CSTeamsItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     team_pretty_name_in = MapCompose(str.strip)
     team_name_in = MapCompose(str.strip)
     team_page_link_in = MapCompose(str.strip)
@@ -60,7 +62,7 @@ class CSTeamsItemLoader(ItemLoader):
 
 class CSPlayersItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     player_nickname_in = MapCompose(str.strip)
     player_name_in = MapCompose(str.strip)
     player_team_in = MapCompose(str.strip)
@@ -72,7 +74,7 @@ class CSPlayersItemLoader(ItemLoader):
 
 class CSNewsItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     header_in = MapCompose(str.strip)
     text_out = Identity()
     url_in = MapCompose(str.strip)
@@ -81,7 +83,7 @@ class CSNewsItemLoader(ItemLoader):
 
 class CSPMatchesItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
-    
+
     date_in = MapCompose(str.strip, parse_datetime)
     team1_in = MapCompose(str.strip)
     team1_score_in = MapCompose(str.strip)

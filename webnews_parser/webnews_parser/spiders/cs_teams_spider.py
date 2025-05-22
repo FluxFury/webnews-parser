@@ -23,7 +23,7 @@ class CSTeamsSpider(Spider):
     """
 
     name: str = "CSTeamsSpider"
-    
+
     custom_settings: dict[str, Any] = {  # noqa: RUF012
         "DOWNLOADER_MIDDLEWARES": {
             "scrapy.downloadermiddlewares.useragent.UserAgentMiddleware": None,
@@ -52,7 +52,6 @@ class CSTeamsSpider(Spider):
         self.is_team_links_fetched: bool = False
         self.base_url: str = "https://escorenews.com"
 
-
     def start_requests(self) -> Iterator[Request]:
         """
         Start the spider by issuing requests to team listing pages.
@@ -79,8 +78,10 @@ class CSTeamsSpider(Spider):
         """
         for team_page in response.css("td.tnm a"):
             yield Request(
-                url=urljoin(base=self.base_url, url=team_page.css("::attr(href)").get()),
-                callback=self.parse
+                url=urljoin(
+                    base=self.base_url, url=team_page.css("::attr(href)").get()
+                ),
+                callback=self.parse,
             )
 
     async def parse(self, response: Response, **kwargs: Any) -> Iterator[CSTeamsItem]:
@@ -93,26 +94,28 @@ class CSTeamsSpider(Spider):
                 yield Request(url=team_link, callback=self.parse)
 
         team_name = response.url.split("/")[-1]
-        if response.css("section.team-ach tr").get() is None or team_name == "javascript:;":
+        if (
+            response.css("section.team-ach tr").get() is None
+            or team_name == "javascript:;"
+        ):
             return
 
         # Initialize loader with item and response
-        loader = CSTeamsItemLoader(
-            item=CSTeamsItem(),
-            response=response
-        )
-        
+        loader = CSTeamsItemLoader(item=CSTeamsItem(), response=response)
+
         loader.add_css("team_pretty_name", "div.hblock h1::text")
         loader.add_value("team_name", team_name)
         loader.add_value("team_page_link", response.url)
         loader.add_css("team_logo_link", "div.tourlogo img::attr(img)")
-        loader.add_css("team_region", "table.tinfo.table.table-sm tr:nth-child(3) td::text")
-        
+        loader.add_css(
+            "team_region", "table.tinfo.table.table-sm tr:nth-child(3) td::text"
+        )
+
         # Extract and add data
         stats = self._extract_stats(response)
         players = self._extract_players(response)
         regalia = self._extract_regalia(response)
-        
+
         loader.add_value("stats", stats)
         loader.add_value("players", players)
         loader.add_value("regalia", regalia)
@@ -124,13 +127,18 @@ class CSTeamsSpider(Spider):
         return {
             "matches_played_in_the_last_year": css_mutator(
                 "table.tinfo.table.table-sm tr:nth-child(6) td::text", response
-            ).split("/")[0].strip(),
+            )
+            .split("/")[0]
+            .strip(),
             "matches_played_overall": css_mutator(
-                "table.tinfo.table.table-sm tr:nth-child(6) td span.text-muted::text", response
+                "table.tinfo.table.table-sm tr:nth-child(6) td span.text-muted::text",
+                response,
             ).strip(),
             "winstreak": css_mutator(
                 "table.tinfo.table.table-sm tr:nth-child(8) td::text", response
-            ).split(" ")[0].strip()
+            )
+            .split(" ")[0]
+            .strip(),
         }
 
     def _extract_players(self, response: Response) -> dict[str, tuple]:
@@ -144,8 +152,7 @@ class CSTeamsSpider(Spider):
                 player_photo_link = None
             player_country = css_mutator("img.flag.tt::attr(title)", player).strip()
             player_link = urljoin(
-                base=self.base_url,
-                url=css_mutator("::attr(href)", player).strip()
+                base=self.base_url, url=css_mutator("::attr(href)", player).strip()
             )
             players[nickname] = (status, player_link, player_country, player_photo_link)
         return players
@@ -172,4 +179,3 @@ class CSTeamsSpider(Spider):
             )
             result = await session.execute(stmt)
             return result.scalars().all()
-

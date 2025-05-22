@@ -39,60 +39,61 @@ class CSUpdateTournamentsSpider(Spider):
         matches = get_matches_with_empty_tournaments()
         for match in matches:
             if match.tournament_url:
-                yield Request(match.tournament_url, 
-                            callback=self.parse_tournament,
-                            cb_kwargs={"match_id": match.match_id},
-                            meta={"delay": 4})
+                yield Request(
+                    match.tournament_url,
+                    callback=self.parse_tournament,
+                    cb_kwargs={"match_id": match.match_id},
+                    meta={"delay": 4},
+                )
 
     def parse_tournament(self, response, match_id):
         """Parse tournament details and yield data for updating."""
         retry_times = response.meta.get("retry_times", 0)
         max_retries = 3  # Maximum number of retry attempts
-        
+
         # Check if tournament name exists
         tournament_name = response.css("div.hh h1::text").get()
-        
+
         if not tournament_name and retry_times < max_retries:
             # If tournament name is missing and we haven't exceeded max retries,
             # schedule another request
             yield Request(
                 url=response.url,
                 callback=self.parse_tournament,
-                meta={
-                    "delay": 4,
-                    "retry_times": retry_times + 1
-                },
+                meta={"delay": 4, "retry_times": retry_times + 1},
                 cb_kwargs={"match_id": match_id},
-                dont_filter=True
+                dont_filter=True,
             )
             return
 
         loader = CSUpdateTournamentsLoader(
-            item=CSUpdateTournamentsItem(),
-            response=response
+            item=CSUpdateTournamentsItem(), response=response
         )
-        
+
         loader.add_value("match_id", match_id)
         loader.add_css("tournament_name", "div.hh h1::text")
         loader.add_xpath(
-            "tournament_location",
-            "//th[contains(text(),'Dates')]/parent::*/td/text()"
+            "tournament_location", "//th[contains(text(),'Dates')]/parent::*/td/text()"
         )
         loader.add_css("tournament_logo_link", "div.tourlogo picture img::attr(src)")
-        
+
         # Handle description
-        description_texts = response.xpath("//div[@class='tourdescription']//text()").getall()
-        description = " ".join(text.strip() for text in description_texts if text.strip())
+        description_texts = response.xpath(
+            "//div[@class='tourdescription']//text()"
+        ).getall()
+        description = " ".join(
+            text.strip() for text in description_texts if text.strip()
+        )
         loader.add_value("tournament_description", description)
-        
+
         # Add start date and prize pool
         loader.add_xpath(
             "tournament_start_date",
-            "//th[contains(text(),'Dates')]/parent::*/td/@datetime"
+            "//th[contains(text(),'Dates')]/parent::*/td/@datetime",
         )
         loader.add_xpath(
             "tournament_prize_pool",
-            "//th[contains(text(),'Prize Pool')]/parent::*/td/text()"
+            "//th[contains(text(),'Prize Pool')]/parent::*/td/text()",
         )
-        
+
         yield loader.load_item()

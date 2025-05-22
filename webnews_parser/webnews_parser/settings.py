@@ -8,13 +8,10 @@ CLOSESPIDER_TIMEOUT_NO_ITEM = 360
 
 PLAYWRIGHT_USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
 ]
 
-PLAYWRIGHT_ARGS = [
-    "--window-size=1920,1080",
-    "--disable-popup-blocking"
-]
+PLAYWRIGHT_ARGS = ["--window-size=1920,1080", "--disable-popup-blocking"]
 
 CONCURRENT_REQUESTS = 8
 CONCURRENT_REQUESTS_PER_DOMAIN = 8
