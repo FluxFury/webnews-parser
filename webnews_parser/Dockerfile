@@ -10,7 +10,7 @@ COPY webnews_parser .
 RUN scrapyd-deploy --build-egg=webnews_parser.egg
 
 
-FROM python:3.13-slim-bullseye
+FROM python:3.12-slim-bullseye
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
